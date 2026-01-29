@@ -1,4 +1,4 @@
-import { Channel, Category, Language } from '../types';
+import { Channel, Category, Language, ChannelStatus } from '../types';
 
 const BRAVE_API_KEY = process.env.BRAVE_SEARCH_API_KEY || '';
 const BRAVE_API_URL = 'https://api.search.brave.com/res/v1/web/search';
@@ -25,7 +25,7 @@ export const searchTelegramChannels = async (query: string): Promise<Channel[]> 
 
   try {
     // We append site:t.me to ensure we are looking for telegram channels
-    // and exclude individual message links if possible (tough with just site:t.me, but good enough)
+    // and exclude individual message links if possible
     const searchParams = new URLSearchParams({
       q: `${query} site:t.me`,
       count: '20',
@@ -65,20 +65,34 @@ const transformToChannel = (result: BraveResult, index: number): Channel => {
   const urlParts = result.url.split('/');
   const username = urlParts[urlParts.length - 1] || 'unknown';
   
-  // Clean title (Brave often includes " - Telegram" or similar suffixes)
-  const name = result.title.replace(/ – Telegram.*/, '').replace(/ \| Telegram.*/, '').trim();
+  // Clean title
+  const rawTitle = result.title;
+  const rawDesc = result.description;
+
+  // Status Detection
+  let status = ChannelStatus.ACTIVE;
+  const statusCheck = (rawTitle + ' ' + rawDesc).toLowerCase();
+  
+  if (statusCheck.includes('channel not found') || statusCheck.includes('page not found') || statusCheck.includes('deleted account')) {
+    status = ChannelStatus.DELETED;
+  } else if (statusCheck.includes('unavailable due to') || statusCheck.includes('copyright infringement') || statusCheck.includes('pornographic content') || statusCheck.includes('blocked in your country')) {
+    status = ChannelStatus.BANNED;
+  }
+
+  const name = rawTitle.replace(/ – Telegram.*/, '').replace(/ \| Telegram.*/, '').trim();
 
   return {
     id: `web-${index}-${Date.now()}`,
     name: name,
     username: username,
-    description: result.description || 'No description available.',
-    members: 0, // Web results don't provide member count
-    category: Category.ALL, // Default to All as we can't easily categorize without AI analysis
+    description: rawDesc || 'No description available.',
+    members: 0, 
+    category: Category.ALL, 
     language: mapLanguage(result.language),
     lastActive: result.age ? result.age : 'Recently',
-    avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=229ED9&color=fff`, // Placeholder
-    verified: false
+    avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=229ED9&color=fff`, 
+    verified: false,
+    status: status
   };
 };
 

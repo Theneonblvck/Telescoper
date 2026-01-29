@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Channel, Category, Language } from '../types';
+import { Channel, Category, Language, ChannelStatus } from '../types';
 
 const apiKey = process.env.API_KEY || '';
 // Separate key for Custom Search JSON API if available, otherwise fall back to generic key
@@ -83,7 +83,8 @@ const searchWithGemini = async (query: string): Promise<Channel[]> => {
           language: mapLanguage(item.language),
           lastActive: 'Recently',
           avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name || 'T')}&background=229ED9&color=fff`,
-          verified: false
+          verified: false,
+          status: ChannelStatus.ACTIVE // AI results are usually active/valid because of the prompt instructions
         }));
       }
     }
@@ -117,11 +118,8 @@ const searchWithCSE = async (query: string, cseId: string): Promise<Channel[]> =
       }
     }
 
-    // 2. Parse 'cat:' operator to simply append keywords, as CSE doesn't have a category param
-    // We treat 'cat:tech' as adding "tech" to the query string
+    // 2. Parse 'cat:' operator to simply append keywords
     finalQuery = finalQuery.replace(/cat:(\w+)/g, '$1').replace(/category:(\w+)/g, '$1');
-
-    // 3. 'intitle:', '-', 'site:', '""' are supported natively by Google CSE, so we leave them in `finalQuery`
 
     const searchParams = new URLSearchParams({
       key: searchApiKey,
@@ -160,16 +158,32 @@ const transformCSEItemToChannel = (item: any, index: number): Channel => {
   const username = urlParts[urlParts.length - 1] || 'unknown';
   
   const metatags = item.pagemap?.metatags?.[0] || {};
-  let name = metatags['og:title'] || item.title;
-  name = name
+  let rawTitle = metatags['og:title'] || item.title || '';
+  const rawDescription = metatags['og:description'] || item.snippet || 'No description available.';
+
+  // Status Detection
+  let status = ChannelStatus.ACTIVE;
+  const statusCheck = (rawTitle + ' ' + rawDescription).toLowerCase();
+  
+  if (statusCheck.includes('channel not found') || statusCheck.includes('page not found') || statusCheck.includes('deleted account')) {
+    status = ChannelStatus.DELETED;
+  } else if (statusCheck.includes('unavailable due to') || statusCheck.includes('copyright infringement') || statusCheck.includes('pornographic content') || statusCheck.includes('blocked in your country')) {
+    status = ChannelStatus.BANNED;
+  }
+
+  // Name Cleaning
+  let name = rawTitle
     .replace(/ – Telegram.*/, '')
     .replace(/ \| Telegram.*/, '')
     .replace(/^Telegram: Contact @/, '')
     .replace(/^Telegram: /, '')
     .trim();
 
-  const description = metatags['og:description'] || item.snippet || 'No description available.';
-  
+  // If the name is just the username and it's suspended, it often looks like "username"
+  if (!name || name.toLowerCase() === 'telegram') {
+      name = username;
+  }
+
   let avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=229ED9&color=fff`;
   if (metatags['og:image']) {
     avatarUrl = metatags['og:image'];
@@ -177,19 +191,20 @@ const transformCSEItemToChannel = (item: any, index: number): Channel => {
     avatarUrl = item.pagemap.cse_image[0].src;
   }
 
-  const members = extractMembers(description) || extractMembers(item.snippet);
+  const members = extractMembers(rawDescription) || extractMembers(item.snippet);
 
   return {
     id: `cse-${index}-${Date.now()}`,
     name: name,
     username: username,
-    description: description,
+    description: rawDescription,
     members: members,
     category: Category.ALL,
-    language: detectLanguage(description + ' ' + name),
+    language: detectLanguage(rawDescription + ' ' + name),
     lastActive: 'Recently',
     avatarUrl: avatarUrl,
-    verified: false
+    verified: false,
+    status: status
   };
 };
 

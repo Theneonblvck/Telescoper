@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { MOCK_CHANNELS } from './constants';
-import { FilterState, Category, Language, Channel } from './types';
+import { FilterState, Category, Language, Channel, ChannelStatus } from './types';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Sidebar from './components/Sidebar';
@@ -20,7 +20,8 @@ function App() {
   const [filters, setFilters] = useState<FilterState>({
     category: Category.ALL,
     language: Language.ALL,
-    minSubscribers: 0
+    minSubscribers: 0,
+    onlyActive: true // Default to showing only active channels
   });
   
   const [sortBy, setSortBy] = useState<SortOption>('members');
@@ -64,7 +65,7 @@ function App() {
           setChannels(webResults);
           setUsingWebResults(true);
           setCurrentCseName(cseId ? (cseId === '004805129374225513871' ? 'CSE Global' : 'CSE Extended') : 'AI Search');
-          // Reset strict filters that might hide web results (since they lack metadata)
+          // Reset strict filters that might hide web results, but KEEP onlyActive default
           setFilters(prev => ({ ...prev, category: Category.ALL, minSubscribers: 0 }));
         } else {
           // Fallback to local if web finds nothing
@@ -120,8 +121,11 @@ function App() {
       const matchesCategory = filters.category === Category.ALL || channel.category === filters.category;
       const matchesLanguage = filters.language === Language.ALL || channel.language === filters.language;
       const matchesSubs = channel.members >= filters.minSubscribers;
+      
+      // Status filter
+      const matchesStatus = filters.onlyActive ? channel.status === ChannelStatus.ACTIVE : true;
 
-      return matchesSearch && matchesCategory && matchesLanguage && matchesSubs;
+      return matchesSearch && matchesCategory && matchesLanguage && matchesSubs && matchesStatus;
     });
 
     // 2. Sort
@@ -240,12 +244,14 @@ function App() {
                 </div>
                 <h3 className="text-lg font-bold text-white uppercase tracking-wider">No channels found</h3>
                 <p className="mt-2 text-sm text-gray-500 max-w-md mx-auto">
-                  {usingWebResults ? 'Search completed. No relevant signals detected.' : 'Adjust search parameters to detect channels.'}
+                  {usingWebResults 
+                    ? 'Search completed. Try disabling "Active Only" or changing your query.' 
+                    : 'Adjust search parameters to detect channels.'}
                 </p>
                 <button 
                   onClick={() => {
                     setSearchQuery('');
-                    setFilters({ category: Category.ALL, language: Language.ALL, minSubscribers: 0 });
+                    setFilters({ category: Category.ALL, language: Language.ALL, minSubscribers: 0, onlyActive: true });
                     setChannels(MOCK_CHANNELS);
                     setUsingWebResults(false);
                   }}

@@ -1,4 +1,4 @@
-import { Channel, Category, Language } from './types';
+import { Channel, Category, Language, ChannelStatus } from './types';
 
 export const MOCK_CHANNELS: Channel[] = [
   {
@@ -11,7 +11,8 @@ export const MOCK_CHANNELS: Channel[] = [
     language: Language.ENGLISH,
     lastActive: '2 mins ago',
     avatarUrl: 'https://picsum.photos/seed/crypto1/200',
-    verified: true
+    verified: true,
+    status: ChannelStatus.ACTIVE
   },
   {
     id: '2',
@@ -23,7 +24,8 @@ export const MOCK_CHANNELS: Channel[] = [
     language: Language.ENGLISH,
     lastActive: '1 hour ago',
     avatarUrl: 'https://picsum.photos/seed/tech1/200',
-    verified: true
+    verified: true,
+    status: ChannelStatus.ACTIVE
   },
   {
     id: '3',
@@ -34,7 +36,8 @@ export const MOCK_CHANNELS: Channel[] = [
     category: Category.FITNESS,
     language: Language.ENGLISH,
     lastActive: '5 hours ago',
-    avatarUrl: 'https://picsum.photos/seed/yoga/200'
+    avatarUrl: 'https://picsum.photos/seed/yoga/200',
+    status: ChannelStatus.ACTIVE
   },
   {
     id: '4',
@@ -45,7 +48,8 @@ export const MOCK_CHANNELS: Channel[] = [
     category: Category.MOVIES,
     language: Language.ENGLISH,
     lastActive: '12 hours ago',
-    avatarUrl: 'https://picsum.photos/seed/movie1/200'
+    avatarUrl: 'https://picsum.photos/seed/movie1/200',
+    status: ChannelStatus.ACTIVE
   },
   {
     id: '5',
@@ -57,7 +61,8 @@ export const MOCK_CHANNELS: Channel[] = [
     language: Language.ENGLISH,
     lastActive: '10 mins ago',
     avatarUrl: 'https://picsum.photos/seed/news1/200',
-    verified: true
+    verified: true,
+    status: ChannelStatus.ACTIVE
   },
   {
     id: '6',
@@ -68,7 +73,8 @@ export const MOCK_CHANNELS: Channel[] = [
     category: Category.TECH,
     language: Language.ENGLISH,
     lastActive: '1 day ago',
-    avatarUrl: 'https://picsum.photos/seed/js/200'
+    avatarUrl: 'https://picsum.photos/seed/js/200',
+    status: ChannelStatus.ACTIVE
   },
   {
     id: '7',
@@ -79,7 +85,8 @@ export const MOCK_CHANNELS: Channel[] = [
     category: Category.NEWS,
     language: Language.SPANISH,
     lastActive: '30 mins ago',
-    avatarUrl: 'https://picsum.photos/seed/spanish1/200'
+    avatarUrl: 'https://picsum.photos/seed/spanish1/200',
+    status: ChannelStatus.ACTIVE
   },
   {
     id: '8',
@@ -90,7 +97,8 @@ export const MOCK_CHANNELS: Channel[] = [
     category: Category.CRYPTO,
     language: Language.ENGLISH,
     lastActive: '3 hours ago',
-    avatarUrl: 'https://picsum.photos/seed/btc/200'
+    avatarUrl: 'https://picsum.photos/seed/btc/200',
+    status: ChannelStatus.ACTIVE
   },
   {
     id: '9',
@@ -101,7 +109,8 @@ export const MOCK_CHANNELS: Channel[] = [
     category: Category.EDUCATION,
     language: Language.ENGLISH,
     lastActive: '2 days ago',
-    avatarUrl: 'https://picsum.photos/seed/python/200'
+    avatarUrl: 'https://picsum.photos/seed/python/200',
+    status: ChannelStatus.ACTIVE
   },
   {
     id: '10',
@@ -112,7 +121,8 @@ export const MOCK_CHANNELS: Channel[] = [
     category: Category.HUMOR,
     language: Language.SPANISH,
     lastActive: '4 hours ago',
-    avatarUrl: 'https://picsum.photos/seed/meme1/200'
+    avatarUrl: 'https://picsum.photos/seed/meme1/200',
+    status: ChannelStatus.ACTIVE
   },
   {
     id: '11',
@@ -124,7 +134,8 @@ export const MOCK_CHANNELS: Channel[] = [
     language: Language.ENGLISH,
     lastActive: '45 mins ago',
     avatarUrl: 'https://picsum.photos/seed/finance/200',
-    verified: true
+    verified: true,
+    status: ChannelStatus.ACTIVE
   },
   {
     id: '12',
@@ -135,7 +146,8 @@ export const MOCK_CHANNELS: Channel[] = [
     category: Category.FITNESS,
     language: Language.ENGLISH,
     lastActive: '6 hours ago',
-    avatarUrl: 'https://picsum.photos/seed/gym/200'
+    avatarUrl: 'https://picsum.photos/seed/gym/200',
+    status: ChannelStatus.ACTIVE
   },
   {
     id: '13',
@@ -146,7 +158,8 @@ export const MOCK_CHANNELS: Channel[] = [
     category: Category.ART,
     language: Language.SPANISH,
     lastActive: '1 day ago',
-    avatarUrl: 'https://picsum.photos/seed/art/200'
+    avatarUrl: 'https://picsum.photos/seed/art/200',
+    status: ChannelStatus.ACTIVE
   },
   {
     id: '14',
@@ -157,7 +170,8 @@ export const MOCK_CHANNELS: Channel[] = [
     category: Category.EDUCATION,
     language: Language.ENGLISH,
     lastActive: '3 hours ago',
-    avatarUrl: 'https://picsum.photos/seed/history/200'
+    avatarUrl: 'https://picsum.photos/seed/history/200',
+    status: ChannelStatus.ACTIVE
   },
   {
     id: '15',
@@ -168,7 +182,8 @@ export const MOCK_CHANNELS: Channel[] = [
     category: Category.MOVIES,
     language: Language.ENGLISH,
     lastActive: '20 mins ago',
-    avatarUrl: 'https://picsum.photos/seed/marvel/200'
+    avatarUrl: 'https://picsum.photos/seed/marvel/200',
+    status: ChannelStatus.ACTIVE
   },
   {
     id: '16',
@@ -180,7 +195,8 @@ export const MOCK_CHANNELS: Channel[] = [
     language: Language.ENGLISH,
     lastActive: '1 day ago',
     avatarUrl: 'https://picsum.photos/seed/science/200',
-    verified: true
+    verified: true,
+    status: ChannelStatus.ACTIVE
   },
   {
     id: '17',
@@ -191,7 +207,8 @@ export const MOCK_CHANNELS: Channel[] = [
     category: Category.MOVIES,
     language: Language.HINDI,
     lastActive: '10 mins ago',
-    avatarUrl: 'https://picsum.photos/seed/bollywood/200'
+    avatarUrl: 'https://picsum.photos/seed/bollywood/200',
+    status: ChannelStatus.ACTIVE
   },
   {
     id: '18',
@@ -202,7 +219,8 @@ export const MOCK_CHANNELS: Channel[] = [
     category: Category.CRYPTO,
     language: Language.ENGLISH,
     lastActive: '2 hours ago',
-    avatarUrl: 'https://picsum.photos/seed/defi/200'
+    avatarUrl: 'https://picsum.photos/seed/defi/200',
+    status: ChannelStatus.ACTIVE
   },
   {
     id: '19',
@@ -213,7 +231,8 @@ export const MOCK_CHANNELS: Channel[] = [
     category: Category.TECH,
     language: Language.GERMAN,
     lastActive: '5 hours ago',
-    avatarUrl: 'https://picsum.photos/seed/german/200'
+    avatarUrl: 'https://picsum.photos/seed/german/200',
+    status: ChannelStatus.ACTIVE
   },
   {
     id: '20',
@@ -224,6 +243,19 @@ export const MOCK_CHANNELS: Channel[] = [
     category: Category.FINANCE,
     language: Language.RUSSIAN,
     lastActive: '30 mins ago',
-    avatarUrl: 'https://picsum.photos/seed/russian/200'
+    avatarUrl: 'https://picsum.photos/seed/russian/200',
+    status: ChannelStatus.ACTIVE
+  },
+  {
+    id: '21',
+    name: 'Pirate Bay (Proxy)',
+    username: 'tpb_proxy_official',
+    description: 'This channel is unavailable due to copyright infringement.',
+    members: 0,
+    category: Category.TECH,
+    language: Language.ENGLISH,
+    lastActive: '1 year ago',
+    avatarUrl: 'https://ui-avatars.com/api/?name=PB&background=000&color=fff',
+    status: ChannelStatus.BANNED
   }
 ];

@@ -9,6 +9,14 @@ export interface Channel {
   lastActive: string;
   avatarUrl: string;
   verified?: boolean;
+  status: ChannelStatus;
+}
+
+export enum ChannelStatus {
+  ACTIVE = 'Active',
+  BANNED = 'Banned',
+  DELETED = 'Deleted',
+  UNKNOWN = 'Unknown'
 }
 
 export enum Category {
@@ -37,4 +45,5 @@ export interface FilterState {
   category: Category;
   language: Language;
   minSubscribers: number;
+  onlyActive: boolean;
 }

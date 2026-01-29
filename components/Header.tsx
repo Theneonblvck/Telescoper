@@ -29,9 +29,9 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, theme, toggleTheme }) => {
         <div className="flex items-center gap-6">
           <a href="#" className="hidden sm:block text-xs font-bold text-gray-500 hover:text-white uppercase tracking-widest transition-colors">About</a>
           <button 
-             className="bg-telegram text-white px-6 py-2 text-xs font-bold uppercase tracking-widest transition-all duration-300 rounded-none border border-transparent hover:bg-yellow-400 hover:text-black hover:border-yellow-500 hover:shadow-[0_0_10px_rgba(250,204,21,0.5)]"
+             className="bg-telegram text-white px-6 py-2 text-xs font-bold uppercase tracking-widest transition-all duration-300 rounded-none border border-transparent hover:bg-yellow-400 hover:text-black hover:border-yellow-500 hover:shadow-[0_0_10px_rgba(250,204,21,0.5)] font-mono"
           >
-            Add Channel
+            [+] suggestion box
           </button>
         </div>
       </div>

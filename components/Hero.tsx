@@ -209,8 +209,8 @@ const Hero: React.FC<HeroProps> = ({ onSearch, initialQuery = '' }) => {
                       : 'border-telegram/30 text-telegram hover:bg-yellow-400 hover:border-yellow-400 hover:text-black' 
                   }`}
                 >
-                  <Terminal className="w-3 h-3" />
-                  Advanced Syntax
+                  <span className="font-mono text-xs font-black mr-1">{">_"}</span>
+                  ADVANCED SYNTAX
                 </button>
 
                 {/* Export Toggle */}

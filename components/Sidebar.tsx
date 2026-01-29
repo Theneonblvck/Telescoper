@@ -1,6 +1,6 @@
 import React from 'react';
 import { FilterState, Category, Language } from '../types';
-import { Filter, X, ChevronRight } from 'lucide-react';
+import { Filter, X, ChevronRight, ShieldCheck } from 'lucide-react';
 
 interface SidebarProps {
   filters: FilterState;
@@ -22,6 +22,10 @@ const Sidebar: React.FC<SidebarProps> = ({ filters, setFilters, className = '', 
     setFilters(prev => ({ ...prev, minSubscribers: parseInt(e.target.value, 10) }));
   };
 
+  const toggleActiveOnly = () => {
+    setFilters(prev => ({ ...prev, onlyActive: !prev.onlyActive }));
+  };
+
   const formatSubscribers = (num: number) => {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
     if (num >= 1000) return (num / 1000).toFixed(0) + 'K';
@@ -40,6 +44,27 @@ const Sidebar: React.FC<SidebarProps> = ({ filters, setFilters, className = '', 
             <X className="w-5 h-5" />
           </button>
         )}
+      </div>
+
+      {/* Active Filter */}
+      <div className="mb-10">
+        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Signal Integrity</h3>
+        <button 
+            onClick={toggleActiveOnly}
+            className={`w-full flex items-center justify-between p-3 border transition-all duration-200 group ${
+                filters.onlyActive 
+                ? 'bg-telegram/10 border-telegram text-white' 
+                : 'bg-[#050505] border-gray-700 text-gray-400 hover:border-gray-500'
+            }`}
+        >
+            <div className="flex items-center gap-2 text-sm font-bold uppercase">
+                <ShieldCheck className={`w-4 h-4 ${filters.onlyActive ? 'text-telegram' : 'text-gray-600'}`} />
+                <span>Active Only</span>
+            </div>
+            <div className={`w-8 h-4 rounded-full relative transition-colors ${filters.onlyActive ? 'bg-telegram' : 'bg-gray-700'}`}>
+                <div className={`absolute top-1 left-1 w-2 h-2 rounded-full bg-white transition-transform ${filters.onlyActive ? 'translate-x-4' : 'translate-x-0'}`}></div>
+            </div>
+        </button>
       </div>
 
       {/* Categories */}
