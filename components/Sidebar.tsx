@@ -1,6 +1,6 @@
 import React from 'react';
 import { FilterState, Category, Language } from '../types';
-import { Filter, X } from 'lucide-react';
+import { Filter, X, ChevronRight } from 'lucide-react';
 
 interface SidebarProps {
   filters: FilterState;
@@ -29,33 +29,36 @@ const Sidebar: React.FC<SidebarProps> = ({ filters, setFilters, className = '', 
   };
 
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-colors duration-200 ${className}`}>
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2 text-gray-800 dark:text-white font-bold text-lg">
-          <Filter className="w-5 h-5" />
-          <span>Filters</span>
+    <div className={`bg-[#0A0A0A] border border-gray-800 p-6 ${className}`}>
+      <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-800">
+        <div className="flex items-center gap-2 text-white font-bold text-sm uppercase tracking-widest">
+          <Filter className="w-4 h-4 text-telegram" />
+          <span>Parameters</span>
         </div>
         {onCloseMobile && (
-          <button onClick={onCloseMobile} className="lg:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+          <button onClick={onCloseMobile} className="lg:hidden text-gray-500 hover:text-white">
             <X className="w-5 h-5" />
           </button>
         )}
       </div>
 
       {/* Categories */}
-      <div className="mb-8">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-200 uppercase tracking-wider mb-3">Category</h3>
-        <div className="space-y-2">
+      <div className="mb-10">
+        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Sector</h3>
+        <div className="space-y-1">
           {Object.values(Category).map((cat) => (
-            <label key={cat} className="flex items-center group cursor-pointer">
+            <label key={cat} className="flex items-center group cursor-pointer py-1">
+              <div className={`w-4 h-4 border flex items-center justify-center mr-3 transition-colors ${filters.category === cat ? 'border-telegram bg-telegram/10' : 'border-gray-700 group-hover:border-gray-500'}`}>
+                {filters.category === cat && <div className="w-2 h-2 bg-telegram"></div>}
+              </div>
               <input
                 type="radio"
                 name="category"
                 checked={filters.category === cat}
                 onChange={() => handleCategoryChange(cat)}
-                className="w-4 h-4 text-telegram border-gray-300 dark:border-gray-600 focus:ring-telegram bg-gray-50 dark:bg-gray-700"
+                className="hidden"
               />
-              <span className={`ml-3 text-sm group-hover:text-telegram dark:group-hover:text-telegram-light transition-colors ${filters.category === cat ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-600 dark:text-gray-400'}`}>
+              <span className={`text-sm tracking-wide uppercase transition-colors ${filters.category === cat ? 'text-white font-bold' : 'text-gray-400 group-hover:text-gray-200'}`}>
                 {cat}
               </span>
             </label>
@@ -64,27 +67,32 @@ const Sidebar: React.FC<SidebarProps> = ({ filters, setFilters, className = '', 
       </div>
 
       {/* Language */}
-      <div className="mb-8">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-200 uppercase tracking-wider mb-3">Language</h3>
-        <select
-          value={filters.language}
-          onChange={handleLanguageChange}
-          className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 text-sm rounded-lg focus:ring-telegram focus:border-telegram block p-2.5 transition-colors"
-        >
-          {Object.values(Language).map((lang) => (
-            <option key={lang} value={lang}>{lang}</option>
-          ))}
-        </select>
+      <div className="mb-10">
+        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Region / Lang</h3>
+        <div className="relative">
+          <select
+            value={filters.language}
+            onChange={handleLanguageChange}
+            className="w-full bg-[#050505] border border-gray-700 text-gray-300 text-sm focus:border-telegram focus:ring-0 block p-3 appearance-none rounded-none uppercase tracking-wide"
+          >
+            {Object.values(Language).map((lang) => (
+              <option key={lang} value={lang}>{lang}</option>
+            ))}
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+            <ChevronRight className="w-4 h-4 rotate-90" />
+          </div>
+        </div>
       </div>
 
       {/* Subscribers Range */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-200 uppercase tracking-wider mb-3">
-          Min Subscribers
+        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">
+          Min Signal Strength
         </h3>
-        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
+        <div className="flex justify-between text-[10px] text-gray-500 font-mono mb-2 uppercase">
           <span>0</span>
-          <span>{formatSubscribers(filters.minSubscribers)}</span>
+          <span className="text-telegram">{formatSubscribers(filters.minSubscribers)}</span>
           <span>1M+</span>
         </div>
         <input
@@ -94,7 +102,7 @@ const Sidebar: React.FC<SidebarProps> = ({ filters, setFilters, className = '', 
           step="10000"
           value={filters.minSubscribers}
           onChange={handleSubscriberChange}
-          className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-telegram"
+          className="w-full h-1 bg-gray-800 rounded-none appearance-none cursor-pointer accent-telegram"
         />
       </div>
     </div>

@@ -2,7 +2,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Channel, Category, Language } from '../types';
 
 const apiKey = process.env.API_KEY || '';
-// Separate key for Custom Search JSON API if available, otherwise fall back to generic key (might fail if it's Gemini-only)
+// Separate key for Custom Search JSON API if available, otherwise fall back to generic key
 const searchApiKey = process.env.GOOGLE_SEARCH_API_KEY || process.env.API_KEY || ''; 
 const GOOGLE_API_URL = 'https://www.googleapis.com/customsearch/v1';
 
@@ -25,7 +25,18 @@ const searchWithGemini = async (query: string): Promise<Channel[]> => {
 
   try {
     const model = 'gemini-3-flash-preview';
-    const prompt = `Search for public Telegram channels related to "${query}".
+    
+    // Enhanced prompt to handle operators
+    const prompt = `Search for public Telegram channels related to: "${query}".
+    
+    The user query may contain specific operators. Interpret them as follows:
+    - "phrase": Match exact phrases in channel name or description.
+    - -word: Exclude channels containing this word.
+    - intitle:word: The word MUST appear in the channel name.
+    - lang:xx : Prioritize channels in this language code (en, es, ru, de, etc).
+    - cat:xx or category:xx : Focus on this category context.
+    - site:t.me : This is implicit, always find t.me links.
+
     Focus on finding real, active channels.
     Return a list of at least 5 channels found.
     For each channel, provide:
@@ -92,12 +103,36 @@ const searchWithCSE = async (query: string, cseId: string): Promise<Channel[]> =
   }
 
   try {
+    // 1. Parse 'lang:' operator to use Google's 'lr' (language restriction) parameter
+    let finalQuery = query;
+    let langParam = '';
+
+    const langMatch = query.match(/lang:([a-zA-Z-]+)/);
+    if (langMatch) {
+      const code = langMatch[1].toLowerCase();
+      finalQuery = finalQuery.replace(langMatch[0], '').trim();
+      // Map common codes to Google 'lr' format
+      if (['en', 'es', 'ru', 'de', 'fr', 'it', 'pt', 'zh'].includes(code)) {
+        langParam = `lang_${code}`;
+      }
+    }
+
+    // 2. Parse 'cat:' operator to simply append keywords, as CSE doesn't have a category param
+    // We treat 'cat:tech' as adding "tech" to the query string
+    finalQuery = finalQuery.replace(/cat:(\w+)/g, '$1').replace(/category:(\w+)/g, '$1');
+
+    // 3. 'intitle:', '-', 'site:', '""' are supported natively by Google CSE, so we leave them in `finalQuery`
+
     const searchParams = new URLSearchParams({
       key: searchApiKey,
       cx: cseId,
-      q: query,
+      q: finalQuery,
       num: '10'
     });
+
+    if (langParam) {
+      searchParams.append('lr', langParam);
+    }
 
     const response = await fetch(`${GOOGLE_API_URL}?${searchParams.toString()}`);
     const data = await response.json();

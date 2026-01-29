@@ -26,14 +26,8 @@ function App() {
   const [sortBy, setSortBy] = useState<SortOption>('members');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('theme');
-      if (saved === 'dark' || saved === 'light') return saved;
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-    return 'light';
-  });
+  // Force dark mode logic for this theme, though we keep the toggle functional
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -42,7 +36,6 @@ function App() {
     } else {
       root.classList.remove('dark');
     }
-    localStorage.setItem('theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {
@@ -147,7 +140,7 @@ function App() {
   }, [searchQuery, filters, channels, usingWebResults, sortBy]);
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
+    <div className="min-h-screen flex flex-col font-mono bg-[#050505] text-gray-100 selection:bg-yellow-400 selection:text-black">
       <Header 
         onMenuClick={() => setIsMobileMenuOpen(true)} 
         theme={theme}
@@ -156,12 +149,12 @@ function App() {
       
       <Hero onSearch={handleSearch} initialQuery={searchQuery} />
 
-      <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-col lg:flex-row gap-8">
           
           {/* Desktop Sidebar */}
           <aside className="hidden lg:block w-64 flex-shrink-0">
-            <div className="sticky top-24">
+            <div className="sticky top-28">
               <Sidebar filters={filters} setFilters={setFilters} />
             </div>
           </aside>
@@ -170,18 +163,18 @@ function App() {
           {isMobileMenuOpen && (
             <div className="fixed inset-0 z-50 lg:hidden flex">
               <div 
-                className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+                className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
                 onClick={() => setIsMobileMenuOpen(false)}
               ></div>
-              <div className="relative bg-white dark:bg-gray-800 w-80 max-w-full h-full overflow-y-auto shadow-xl flex flex-col transition-colors duration-200">
-                <div className="p-4 border-b dark:border-gray-700">
-                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">Filters</h2>
+              <div className="relative bg-[#0A0A0A] border-r border-gray-800 w-80 max-w-full h-full overflow-y-auto flex flex-col">
+                <div className="p-4 border-b border-gray-800">
+                   <h2 className="text-xl font-bold text-white uppercase tracking-wider">Filters</h2>
                 </div>
                 <div className="p-4 flex-grow">
                    <Sidebar 
                       filters={filters} 
                       setFilters={setFilters} 
-                      className="border-none shadow-none p-0 bg-transparent dark:bg-transparent"
+                      className="border-none p-0 bg-transparent"
                       onCloseMobile={() => setIsMobileMenuOpen(false)}
                    />
                 </div>
@@ -191,22 +184,22 @@ function App() {
 
           {/* Main Content Grid */}
           <div className="flex-1">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
               <div className="flex flex-col">
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                <h2 className="text-xl font-bold text-white flex items-center gap-3 uppercase tracking-tight">
                   {usingWebResults && (
-                    <div className="bg-blue-100 dark:bg-blue-900/30 p-1 rounded-md">
+                    <div className="bg-telegram/20 p-1 border border-telegram/50">
                       <SearchIcon className="w-4 h-4 text-telegram" />
                     </div>
                   )}
-                  {searchQuery ? `Results for "${searchQuery}"` : 'Top Channels'}
-                  <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
-                    ({filteredChannels.length})
+                  {searchQuery ? `Results: "${searchQuery}"` : 'Top Channels'}
+                  <span className="text-sm font-normal text-gray-500 font-mono">
+                    [{filteredChannels.length}]
                   </span>
                 </h2>
                 {usingWebResults && (
-                   <span className="text-xs text-gray-500 mt-1">
-                     Found via {currentCseName || 'Web Search'}
+                   <span className="text-xs text-gray-500 mt-1 uppercase tracking-widest font-bold">
+                     Source: {currentCseName || 'Web Search'}
                    </span>
                 )}
               </div>
@@ -216,13 +209,13 @@ function App() {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as SortOption)}
-                    className="appearance-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 py-2 pl-4 pr-10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-telegram focus:border-transparent cursor-pointer shadow-sm hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
+                    className="appearance-none bg-[#0A0A0A] border border-gray-800 text-gray-300 py-2 pl-4 pr-10 rounded-none text-sm focus:outline-none focus:border-telegram focus:ring-1 focus:ring-telegram cursor-pointer hover:border-gray-600 transition-colors uppercase tracking-wider font-bold"
                   >
-                    <option value="name">Sort by Name (A-Z)</option>
-                    <option value="members">Sort by Members (High-Low)</option>
-                    <option value="activity">Sort by Last Active (Newest)</option>
+                    <option value="name">Sort: Name (A-Z)</option>
+                    <option value="members">Sort: Members</option>
+                    <option value="activity">Sort: Active</option>
                   </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 dark:text-gray-400">
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-telegram">
                     <ArrowUpDown className="h-4 w-4" />
                   </div>
                 </div>
@@ -230,9 +223,9 @@ function App() {
             </div>
 
             {isSearching ? (
-              <div className="flex flex-col items-center justify-center py-20">
-                <Loader2 className="w-10 h-10 text-telegram animate-spin mb-4" />
-                <p className="text-gray-500 dark:text-gray-400">Searching...</p>
+              <div className="flex flex-col items-center justify-center py-32 border border-gray-800 border-dashed bg-[#0A0A0A]">
+                <Loader2 className="w-12 h-12 text-telegram animate-spin mb-4" />
+                <p className="text-gray-400 font-mono uppercase tracking-widest animate-pulse">Scanning...</p>
               </div>
             ) : filteredChannels.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -241,13 +234,13 @@ function App() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-dashed border-gray-300 dark:border-gray-700 transition-colors duration-200">
-                <div className="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600 mb-3">
+              <div className="text-center py-20 bg-[#0A0A0A] border border-gray-800 border-dashed">
+                <div className="mx-auto h-12 w-12 text-gray-600 mb-3">
                   <ArrowRight className="h-full w-full transform rotate-45" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">No channels found</h3>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  {usingWebResults ? 'The web search returned no relevant Telegram channels.' : 'Try adjusting your search or filters to find what you\'re looking for.'}
+                <h3 className="text-lg font-bold text-white uppercase tracking-wider">No channels found</h3>
+                <p className="mt-2 text-sm text-gray-500 max-w-md mx-auto">
+                  {usingWebResults ? 'Search completed. No relevant signals detected.' : 'Adjust search parameters to detect channels.'}
                 </p>
                 <button 
                   onClick={() => {
@@ -256,9 +249,9 @@ function App() {
                     setChannels(MOCK_CHANNELS);
                     setUsingWebResults(false);
                   }}
-                  className="mt-4 text-telegram hover:text-telegram-dark font-medium text-sm"
+                  className="mt-6 text-telegram hover:text-white font-bold text-sm uppercase tracking-widest border-b border-telegram hover:border-white transition-all pb-1"
                 >
-                  Clear all filters
+                  Reset Parameters
                 </button>
               </div>
             )}
@@ -266,16 +259,16 @@ function App() {
         </div>
       </main>
 
-      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto transition-colors duration-200">
+      <footer className="bg-[#050505] border-t border-gray-800 mt-auto">
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-gray-500 dark:text-gray-400 text-sm">
-              &copy; {new Date().getFullYear()} TeleScope. All rights reserved.
+            <p className="text-gray-600 text-xs uppercase tracking-widest font-mono">
+              SYSTEM STATUS: ONLINE | &copy; {new Date().getFullYear()} TELESCOPE
             </p>
             <div className="flex gap-6">
-              <a href="#" className="text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-300 text-sm">Privacy Policy</a>
-              <a href="#" className="text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-300 text-sm">Terms of Service</a>
-              <a href="#" className="text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-300 text-sm">Contact</a>
+              <a href="#" className="text-gray-600 hover:text-telegram text-xs uppercase tracking-widest transition-colors">Privacy</a>
+              <a href="#" className="text-gray-600 hover:text-telegram text-xs uppercase tracking-widest transition-colors">Terms</a>
+              <a href="#" className="text-gray-600 hover:text-telegram text-xs uppercase tracking-widest transition-colors">Contact</a>
             </div>
           </div>
         </div>
