@@ -48,8 +48,13 @@ const Sidebar: React.FC<SidebarProps> = ({ filters, setFilters, className = '', 
         <div className="space-y-1">
           {Object.values(Category).map((cat) => (
             <label key={cat} className="flex items-center group cursor-pointer py-1">
-              <div className={`w-4 h-4 border flex items-center justify-center mr-3 transition-colors ${filters.category === cat ? 'border-telegram bg-telegram/10' : 'border-gray-700 group-hover:border-gray-500'}`}>
-                {filters.category === cat && <div className="w-2 h-2 bg-telegram"></div>}
+              <div className={`w-4 h-4 border flex items-center justify-center mr-3 transition-colors duration-200 ${
+                  filters.category === cat 
+                    ? 'border-yellow-400 bg-yellow-400' 
+                    : 'border-gray-700 group-hover:border-yellow-400'
+                }`}
+              >
+                {filters.category === cat && <div className="w-1.5 h-1.5 bg-black"></div>}
               </div>
               <input
                 type="radio"
@@ -58,7 +63,12 @@ const Sidebar: React.FC<SidebarProps> = ({ filters, setFilters, className = '', 
                 onChange={() => handleCategoryChange(cat)}
                 className="hidden"
               />
-              <span className={`text-sm tracking-wide uppercase transition-colors ${filters.category === cat ? 'text-white font-bold' : 'text-gray-400 group-hover:text-gray-200'}`}>
+              <span className={`text-sm tracking-wide uppercase transition-colors duration-200 ${
+                  filters.category === cat 
+                    ? 'text-yellow-400 font-bold' 
+                    : 'text-gray-400 group-hover:text-yellow-200'
+                }`}
+              >
                 {cat}
               </span>
             </label>
@@ -69,17 +79,17 @@ const Sidebar: React.FC<SidebarProps> = ({ filters, setFilters, className = '', 
       {/* Language */}
       <div className="mb-10">
         <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Region / Lang</h3>
-        <div className="relative">
+        <div className="relative group">
           <select
             value={filters.language}
             onChange={handleLanguageChange}
-            className="w-full bg-[#050505] border border-gray-700 text-gray-300 text-sm focus:border-telegram focus:ring-0 block p-3 appearance-none rounded-none uppercase tracking-wide"
+            className="w-full bg-[#050505] border border-gray-700 text-gray-300 text-sm focus:border-yellow-400 focus:ring-0 focus:text-white block p-3 appearance-none rounded-none uppercase tracking-wide cursor-pointer transition-colors group-hover:border-gray-500"
           >
             {Object.values(Language).map((lang) => (
               <option key={lang} value={lang}>{lang}</option>
             ))}
           </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 group-hover:text-yellow-400 transition-colors">
             <ChevronRight className="w-4 h-4 rotate-90" />
           </div>
         </div>
@@ -92,7 +102,7 @@ const Sidebar: React.FC<SidebarProps> = ({ filters, setFilters, className = '', 
         </h3>
         <div className="flex justify-between text-[10px] text-gray-500 font-mono mb-2 uppercase">
           <span>0</span>
-          <span className="text-telegram">{formatSubscribers(filters.minSubscribers)}</span>
+          <span className="text-yellow-400 font-bold">{formatSubscribers(filters.minSubscribers)}</span>
           <span>1M+</span>
         </div>
         <input
@@ -102,7 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({ filters, setFilters, className = '', 
           step="10000"
           value={filters.minSubscribers}
           onChange={handleSubscriberChange}
-          className="w-full h-1 bg-gray-800 rounded-none appearance-none cursor-pointer accent-telegram"
+          className="w-full h-1 bg-gray-800 rounded-none appearance-none cursor-pointer accent-yellow-400 hover:accent-yellow-300"
         />
       </div>
     </div>

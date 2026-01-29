@@ -15,9 +15,9 @@ const ChannelCard: React.FC<ChannelCardProps> = ({ channel }) => {
   };
 
   return (
-    <div className="bg-[#0A0A0A] border border-gray-800 hover:border-telegram group transition-all duration-300 flex flex-col h-full relative overflow-hidden">
+    <div className="bg-[#0A0A0A] border border-gray-800 hover:border-yellow-400 group transition-all duration-300 flex flex-col h-full relative overflow-hidden">
       {/* Hover Effect Line */}
-      <div className="absolute top-0 left-0 w-full h-0.5 bg-telegram transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
+      <div className="absolute top-0 left-0 w-full h-0.5 bg-yellow-400 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
 
       <div className="p-6 flex-1">
         <div className="flex items-start gap-4">
@@ -38,14 +38,14 @@ const ChannelCard: React.FC<ChannelCardProps> = ({ channel }) => {
             )}
           </div>
           <div className="flex-1 min-w-0 pt-1">
-            <h3 className="text-lg font-bold text-white truncate pr-1 group-hover:text-telegram transition-colors font-mono tracking-tight" title={channel.name}>
+            <h3 className="text-lg font-bold text-white truncate pr-1 group-hover:text-yellow-400 transition-colors font-mono tracking-tight" title={channel.name}>
               {channel.name}
             </h3>
             <p className="text-xs text-gray-500 truncate font-mono">@{channel.username}</p>
           </div>
         </div>
         
-        <div className="mt-5 border-l-2 border-gray-800 pl-3 group-hover:border-telegram/50 transition-colors">
+        <div className="mt-5 border-l-2 border-gray-800 pl-3 group-hover:border-yellow-400/50 transition-colors">
           <p className="text-sm text-gray-400 line-clamp-2 leading-relaxed h-10 font-mono">
             {channel.description || 'No description provided.'}
           </p>
@@ -78,7 +78,7 @@ const ChannelCard: React.FC<ChannelCardProps> = ({ channel }) => {
           href={`https://t.me/${channel.username}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-white hover:bg-yellow-400 text-black text-xs font-bold py-2 px-4 uppercase tracking-widest transition-all hover:scale-105 active:scale-95 flex items-center gap-2 rounded-none"
+          className="bg-white hover:bg-yellow-400 text-black text-xs font-bold py-2 px-4 uppercase tracking-widest transition-all hover:scale-105 active:scale-95 flex items-center gap-2 rounded-none border border-transparent"
         >
           Join <ExternalLink className="w-3 h-3" />
         </a>
