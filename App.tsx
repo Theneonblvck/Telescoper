@@ -159,7 +159,7 @@ function App() {
           {/* Desktop Sidebar */}
           <aside className="hidden lg:block w-64 flex-shrink-0">
             <div className="sticky top-28">
-              <Sidebar filters={filters} setFilters={setFilters} />
+              <Sidebar filters={filters} setFilters={setFilters} disabled={isSearching} />
             </div>
           </aside>
 
@@ -180,6 +180,7 @@ function App() {
                       setFilters={setFilters} 
                       className="border-none p-0 bg-transparent"
                       onCloseMobile={() => setIsMobileMenuOpen(false)}
+                      disabled={isSearching}
                    />
                 </div>
               </div>
@@ -213,13 +214,14 @@ function App() {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as SortOption)}
-                    className="appearance-none bg-[#0A0A0A] border border-gray-800 text-gray-300 py-2 pl-4 pr-10 rounded-none text-sm focus:outline-none focus:border-telegram focus:ring-1 focus:ring-telegram cursor-pointer hover:border-gray-600 transition-colors uppercase tracking-wider font-bold"
+                    disabled={isSearching}
+                    className={`appearance-none bg-[#0A0A0A] border border-gray-800 text-gray-300 py-2 pl-4 pr-10 rounded-none text-sm focus:outline-none focus:border-telegram focus:ring-1 focus:ring-telegram transition-colors uppercase tracking-wider font-bold ${isSearching ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gray-600'}`}
                   >
                     <option value="name">Sort: Name (A-Z)</option>
                     <option value="members">Sort: Members</option>
                     <option value="activity">Sort: Active</option>
                   </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-telegram">
+                  <div className={`pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 ${isSearching ? 'text-gray-600' : 'text-telegram'}`}>
                     <ArrowUpDown className="h-4 w-4" />
                   </div>
                 </div>

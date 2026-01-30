@@ -7,22 +7,27 @@ interface SidebarProps {
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   className?: string;
   onCloseMobile?: () => void;
+  disabled?: boolean;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ filters, setFilters, className = '', onCloseMobile }) => {
+const Sidebar: React.FC<SidebarProps> = ({ filters, setFilters, className = '', onCloseMobile, disabled = false }) => {
   const handleCategoryChange = (category: Category) => {
+    if (disabled) return;
     setFilters(prev => ({ ...prev, category }));
   };
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (disabled) return;
     setFilters(prev => ({ ...prev, language: e.target.value as Language }));
   };
 
   const handleSubscriberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled) return;
     setFilters(prev => ({ ...prev, minSubscribers: parseInt(e.target.value, 10) }));
   };
 
   const toggleActiveOnly = () => {
+    if (disabled) return;
     setFilters(prev => ({ ...prev, onlyActive: !prev.onlyActive }));
   };
 
@@ -33,7 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({ filters, setFilters, className = '', 
   };
 
   return (
-    <div className={`bg-[#0A0A0A] border border-gray-800 p-6 ${className}`}>
+    <div className={`bg-[#0A0A0A] border border-gray-800 p-6 ${className} ${disabled ? 'opacity-50 pointer-events-none select-none' : ''}`}>
       <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-800">
         <div className="flex items-center gap-2 text-white font-bold text-sm uppercase tracking-widest">
           <Filter className="w-4 h-4 text-telegram" />
@@ -108,6 +113,7 @@ const Sidebar: React.FC<SidebarProps> = ({ filters, setFilters, className = '', 
           <select
             value={filters.language}
             onChange={handleLanguageChange}
+            disabled={disabled}
             className="w-full bg-[#050505] border border-gray-700 text-gray-300 text-sm focus:border-yellow-400 focus:ring-0 focus:text-white block p-3 appearance-none rounded-none uppercase tracking-wide cursor-pointer transition-colors group-hover:border-gray-500"
           >
             {Object.values(Language).map((lang) => (
@@ -137,6 +143,7 @@ const Sidebar: React.FC<SidebarProps> = ({ filters, setFilters, className = '', 
           step="10000"
           value={filters.minSubscribers}
           onChange={handleSubscriberChange}
+          disabled={disabled}
           className="w-full h-1 bg-gray-800 rounded-none appearance-none cursor-pointer accent-yellow-400 hover:accent-yellow-300"
         />
       </div>

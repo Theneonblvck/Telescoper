@@ -1,79 +1,33 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import { Channel, Category, Language, ChannelStatus } from '../types';
 
-const apiKey = process.env.API_KEY || '';
-// Separate key for Custom Search JSON API if available, otherwise fall back to generic key
-const searchApiKey = process.env.GOOGLE_SEARCH_API_KEY || process.env.API_KEY || ''; 
-const GOOGLE_API_URL = 'https://www.googleapis.com/customsearch/v1';
-
-const ai = new GoogleGenAI({ apiKey });
-
 export const searchTelegramChannels = async (query: string, cseId?: string): Promise<Channel[]> => {
-  // If a specific CSE ID is provided, use the Custom Search JSON API
-  if (cseId) {
-    return searchWithCSE(query, cseId);
-  }
-  // Default to Gemini AI Search
-  return searchWithGemini(query);
-};
-
-const searchWithGemini = async (query: string): Promise<Channel[]> => {
-  if (!apiKey) {
-    console.warn('Gemini API Key is missing');
-    return [];
-  }
-
   try {
-    const model = 'gemini-3-flash-preview';
-    
-    // Enhanced prompt to handle operators
-    const prompt = `Search for public Telegram channels related to: "${query}".
-    
-    The user query may contain specific operators. Interpret them as follows:
-    - "phrase": Match exact phrases in channel name or description.
-    - -word: Exclude channels containing this word.
-    - intitle:word: The word MUST appear in the channel name.
-    - lang:xx : Prioritize channels in this language code (en, es, ru, de, etc).
-    - cat:xx or category:xx : Focus on this category context.
-    - site:t.me : This is implicit, always find t.me links.
-
-    Focus on finding real, active channels.
-    Return a list of at least 5 channels found.
-    For each channel, provide:
-    - name: The channel name.
-    - username: The username part of the t.me link (e.g. for t.me/durov, username is durov).
-    - description: A brief description.
-    - members: An estimated member count if available (number), otherwise 0.
-    - language: The primary language of the channel (English, Spanish, Russian, Hindi, German, or Other).
-    
-    Ensure the links are valid Telegram links (t.me).`;
-
-    const response = await ai.models.generateContent({
-      model: model,
-      contents: prompt,
-      config: {
-        tools: [{ googleSearch: {} }],
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              username: { type: Type.STRING },
-              description: { type: Type.STRING },
-              members: { type: Type.NUMBER },
-              language: { type: Type.STRING },
-            }
-          }
-        }
-      }
+    const response = await fetch('/api/google/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, cseId }),
     });
 
-    if (response.text) {
-      const parsed = JSON.parse(response.text);
-      if (Array.isArray(parsed)) {
-        return parsed.map((item: any, index: number) => ({
+    if (response.status === 429) {
+      throw new Error("System cooling down. Please wait a moment.");
+    }
+
+    if (!response.ok) {
+      throw new Error('Search service failed');
+    }
+
+    const data = await response.json();
+
+    if (cseId) {
+      // Handle CSE Response format
+      if (!data.items) return [];
+      return data.items
+        .filter((item: any) => item.link.includes('t.me/'))
+        .map((item: any, index: number) => transformCSEItemToChannel(item, index));
+    } else {
+      // Handle Gemini AI format (which matches our Channel type mostly, but we re-map to be safe)
+      if (Array.isArray(data)) {
+        return data.map((item: any, index: number) => ({
           id: `gen-search-${index}-${Date.now()}`,
           name: item.name || 'Unknown Channel',
           username: item.username || 'unknown',
@@ -84,70 +38,14 @@ const searchWithGemini = async (query: string): Promise<Channel[]> => {
           lastActive: 'Recently',
           avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name || 'T')}&background=229ED9&color=fff`,
           verified: false,
-          status: ChannelStatus.ACTIVE // AI results are usually active/valid because of the prompt instructions
+          status: ChannelStatus.ACTIVE
         }));
       }
     }
-    
     return [];
 
   } catch (error) {
-    console.error("Gemini Search Error:", error);
-    return [];
-  }
-};
-
-const searchWithCSE = async (query: string, cseId: string): Promise<Channel[]> => {
-  if (!searchApiKey) {
-    console.warn('Google Search API Key is missing');
-    return [];
-  }
-
-  try {
-    // 1. Parse 'lang:' operator to use Google's 'lr' (language restriction) parameter
-    let finalQuery = query;
-    let langParam = '';
-
-    const langMatch = query.match(/lang:([a-zA-Z-]+)/);
-    if (langMatch) {
-      const code = langMatch[1].toLowerCase();
-      finalQuery = finalQuery.replace(langMatch[0], '').trim();
-      // Map common codes to Google 'lr' format
-      if (['en', 'es', 'ru', 'de', 'fr', 'it', 'pt', 'zh'].includes(code)) {
-        langParam = `lang_${code}`;
-      }
-    }
-
-    // 2. Parse 'cat:' operator to simply append keywords
-    finalQuery = finalQuery.replace(/cat:(\w+)/g, '$1').replace(/category:(\w+)/g, '$1');
-
-    const searchParams = new URLSearchParams({
-      key: searchApiKey,
-      cx: cseId,
-      q: finalQuery,
-      num: '10'
-    });
-
-    if (langParam) {
-      searchParams.append('lr', langParam);
-    }
-
-    const response = await fetch(`${GOOGLE_API_URL}?${searchParams.toString()}`);
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error(`Google API Error: ${data.error?.message || response.statusText}`);
-      return [];
-    }
-
-    if (!data.items) return [];
-
-    return data.items
-      .filter((item: any) => item.link.includes('t.me/'))
-      .map((item: any, index: number) => transformCSEItemToChannel(item, index));
-
-  } catch (error) {
-    console.error('Failed to search CSE:', error);
+    console.error("Search Error:", error);
     return [];
   }
 };
@@ -161,28 +59,22 @@ const transformCSEItemToChannel = (item: any, index: number): Channel => {
   let rawTitle = metatags['og:title'] || item.title || '';
   const rawDescription = metatags['og:description'] || item.snippet || 'No description available.';
 
-  // Status Detection
   let status = ChannelStatus.ACTIVE;
   const statusCheck = (rawTitle + ' ' + rawDescription).toLowerCase();
   
-  if (statusCheck.includes('channel not found') || statusCheck.includes('page not found') || statusCheck.includes('deleted account')) {
+  if (statusCheck.includes('channel not found') || statusCheck.includes('page not found')) {
     status = ChannelStatus.DELETED;
-  } else if (statusCheck.includes('unavailable due to') || statusCheck.includes('copyright infringement') || statusCheck.includes('pornographic content') || statusCheck.includes('blocked in your country')) {
+  } else if (statusCheck.includes('unavailable due to')) {
     status = ChannelStatus.BANNED;
   }
 
-  // Name Cleaning
   let name = rawTitle
     .replace(/ – Telegram.*/, '')
     .replace(/ \| Telegram.*/, '')
     .replace(/^Telegram: Contact @/, '')
-    .replace(/^Telegram: /, '')
     .trim();
 
-  // If the name is just the username and it's suspended, it often looks like "username"
-  if (!name || name.toLowerCase() === 'telegram') {
-      name = username;
-  }
+  if (!name || name.toLowerCase() === 'telegram') name = username;
 
   let avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=229ED9&color=fff`;
   if (metatags['og:image']) {
@@ -223,9 +115,7 @@ const extractMembers = (text: string): number => {
       numStr = numStr.replace('M', '');
     }
     const val = parseFloat(numStr.replace(',', '.'));
-    if (!isNaN(val)) {
-      return Math.floor(val * multiplier);
-    }
+    if (!isNaN(val)) return Math.floor(val * multiplier);
   }
   return 0;
 };
@@ -243,9 +133,8 @@ const mapLanguage = (langStr?: string): Language => {
 
 const detectLanguage = (text: string): Language => {
   const lower = text.toLowerCase();
-  if (lower.includes(' de ') || lower.includes(' y ') || lower.includes(' el ') || lower.includes(' la ') || lower.includes(' en español ')) return Language.SPANISH;
-  if (lower.includes(' der ') || lower.includes(' und ') || lower.includes(' ist ')) return Language.GERMAN;
+  if (lower.includes(' de ') || lower.includes(' y ') || lower.includes(' en español ')) return Language.SPANISH;
+  if (lower.includes(' der ') || lower.includes(' und ')) return Language.GERMAN;
   if (/[а-яА-Я]/.test(text)) return Language.RUSSIAN;
-  if (lower.includes(' hindi ') || /[\u0900-\u097F]/.test(text)) return Language.HINDI;
   return Language.ENGLISH;
 };

@@ -1,8 +1,5 @@
 import { Channel, Category, Language, ChannelStatus } from '../types';
 
-const BRAVE_API_KEY = process.env.BRAVE_SEARCH_API_KEY || '';
-const BRAVE_API_URL = 'https://api.search.brave.com/res/v1/web/search';
-
 interface BraveResult {
   title: string;
   description: string;
@@ -18,27 +15,17 @@ interface BraveResponse {
 }
 
 export const searchTelegramChannels = async (query: string): Promise<Channel[]> => {
-  if (!BRAVE_API_KEY) {
-    console.warn('Brave Search API Key is missing');
-    return [];
-  }
-
   try {
-    // We append site:t.me to ensure we are looking for telegram channels
-    // and exclude individual message links if possible
-    const searchParams = new URLSearchParams({
-      q: `${query} site:t.me`,
-      count: '20',
-      result_filter: 'web',
-      safesearch: 'moderate'
+    const response = await fetch('/api/brave/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
     });
 
-    const response = await fetch(`${BRAVE_API_URL}?${searchParams.toString()}`, {
-      headers: {
-        'Accept': 'application/json',
-        'X-Subscription-Token': BRAVE_API_KEY
-      }
-    });
+    if (response.status === 429) {
+      console.warn("Rate limit exceeded");
+      throw new Error("System cooling down. Please wait a moment.");
+    }
 
     if (!response.ok) {
       throw new Error(`Brave API Error: ${response.statusText}`);
@@ -51,7 +38,7 @@ export const searchTelegramChannels = async (query: string): Promise<Channel[]> 
     }
 
     return data.web.results
-      .filter(result => result.url.includes('t.me/')) // Ensure they are telegram links
+      .filter(result => result.url.includes('t.me/'))
       .map((result, index) => transformToChannel(result, index));
 
   } catch (error) {
@@ -61,21 +48,18 @@ export const searchTelegramChannels = async (query: string): Promise<Channel[]> 
 };
 
 const transformToChannel = (result: BraveResult, index: number): Channel => {
-  // Extract username from URL (e.g., https://t.me/username)
   const urlParts = result.url.split('/');
   const username = urlParts[urlParts.length - 1] || 'unknown';
   
-  // Clean title
   const rawTitle = result.title;
   const rawDesc = result.description;
 
-  // Status Detection
   let status = ChannelStatus.ACTIVE;
   const statusCheck = (rawTitle + ' ' + rawDesc).toLowerCase();
   
   if (statusCheck.includes('channel not found') || statusCheck.includes('page not found') || statusCheck.includes('deleted account')) {
     status = ChannelStatus.DELETED;
-  } else if (statusCheck.includes('unavailable due to') || statusCheck.includes('copyright infringement') || statusCheck.includes('pornographic content') || statusCheck.includes('blocked in your country')) {
+  } else if (statusCheck.includes('unavailable due to') || statusCheck.includes('copyright infringement')) {
     status = ChannelStatus.BANNED;
   }
 
