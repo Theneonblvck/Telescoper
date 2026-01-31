@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { createClient } from 'redis';
 import { GoogleGenAI, Type } from "@google/genai";
+import NodeCache from 'node-cache';
 import dotenv from 'dotenv';
 import fs from 'fs';
 
@@ -17,20 +18,36 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 8080;
 
-// --- Redis Setup ---
+// --- Caching Setup ---
+// 1. Local In-Memory Cache (Free, Fast, Stateless)
+const localCache = new NodeCache({ stdTTL: 86400 }); // 24 hours default TTL
+
+// 2. Redis Cache (Optional, Persistent, Shared)
 const redisClient = createClient({
   url: process.env.REDIS_URL || 'redis://localhost:6379'
 });
 
-redisClient.on('error', (err) => console.error('Redis Client Error', err));
+redisClient.on('error', (err) => {
+    // Suppress connection refused errors if we expect to run without Redis
+    if ((err as any).code !== 'ECONNREFUSED') {
+        console.error('Redis Client Error', err);
+    }
+});
 
 // Connect to Redis asynchronously
+let isRedisConnected = false;
 (async () => {
   try {
-    await redisClient.connect();
-    console.log('Connected to Redis');
+    // Only attempt connection if a specific URL is provided or we are local
+    if (process.env.REDIS_URL) {
+        await redisClient.connect();
+        isRedisConnected = true;
+        console.log('✅ Connected to Redis (Persistent Cache Active)');
+    } else {
+        console.log('ℹ️ No REDIS_URL found. Using In-Memory Cache (Free Tier Mode).');
+    }
   } catch (err) {
-    console.warn('Redis connection failed. Caching will be disabled.', err);
+    console.warn('⚠️ Redis connection failed. Falling back to In-Memory Cache.', err);
   }
 })();
 
@@ -84,10 +101,18 @@ const feedbackLimiter = rateLimit({
 
 // --- Helper Functions ---
 const getFromCache = async (key: string) => {
-  if (!redisClient.isOpen) return null;
   try {
-    const data = await redisClient.get(key);
-    return data ? JSON.parse(data) : null;
+    // Try Redis first if connected
+    if (isRedisConnected && redisClient.isOpen) {
+        const data = await redisClient.get(key);
+        if (data) return JSON.parse(data);
+    }
+    
+    // Fallback to Local Cache
+    const localData = localCache.get(key);
+    if (localData) return localData;
+
+    return null;
   } catch (error) {
     console.error(`Cache get error for ${key}:`, error);
     return null;
@@ -95,9 +120,14 @@ const getFromCache = async (key: string) => {
 };
 
 const setInCache = async (key: string, data: any, ttlSeconds = 86400) => {
-  if (!redisClient.isOpen) return;
   try {
-    await redisClient.set(key, JSON.stringify(data), { EX: ttlSeconds });
+    // Set in Redis if connected
+    if (isRedisConnected && redisClient.isOpen) {
+        await redisClient.set(key, JSON.stringify(data), { EX: ttlSeconds });
+    }
+    
+    // Always set in Local Cache as backup/primary
+    localCache.set(key, data, ttlSeconds);
   } catch (error) {
     console.error(`Cache set error for ${key}:`, error);
   }
@@ -115,7 +145,7 @@ const logSearchQuery = async (query: string, source: string) => {
 
   console.log(`[ANALYTICS] Search: "${safeQuery}" via ${source}`);
 
-  if (redisClient.isOpen) {
+  if (isRedisConnected && redisClient.isOpen) {
     try {
       await redisClient.lPush('analytics:search_queries', JSON.stringify(entry));
     } catch (err) {
@@ -314,7 +344,7 @@ app.post('/api/feedback', feedbackLimiter, async (req, res) => {
     if (err) console.error('Failed to write to feedback log file:', err);
   });
 
-  if (redisClient.isOpen) {
+  if (isRedisConnected && redisClient.isOpen) {
     try {
       await redisClient.lPush('feedback_submissions', logEntry);
     } catch (err) {
