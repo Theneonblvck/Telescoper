@@ -1,8 +1,5 @@
 import { Channel, Category, Language, ChannelStatus } from '../types';
 
-// const BRAVE_API_KEY = process.env.BRAVE_SEARCH_API_KEY || ''; // Removed for BFF
-// const BRAVE_API_URL = 'https://api.search.brave.com/res/v1/web/search';
-
 interface BraveResult {
   title: string;
   description: string;
@@ -22,20 +19,20 @@ export const searchTelegramChannels = async (query: string): Promise<Channel[]> 
     const response = await fetch('/api/brave/search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query })
+      body: JSON.stringify({ query }),
     });
 
     if (response.status === 429) {
-      console.warn('Rate limit exceeded for Brave search');
-      return [];
+      console.warn("Rate limit exceeded");
+      throw new Error("System cooling down. Please wait a moment.");
     }
 
     if (!response.ok) {
-      throw new Error(`Brave Search API Error: ${response.statusText}`);
+      throw new Error(`Brave API Error: ${response.statusText}`);
     }
 
     const data: BraveResponse = await response.json();
-
+    
     if (!data.web || !data.web.results) {
       return [];
     }
@@ -51,39 +48,79 @@ export const searchTelegramChannels = async (query: string): Promise<Channel[]> 
 };
 
 const transformToChannel = (result: BraveResult, index: number): Channel => {
-  // Extract username from URL (e.g., https://t.me/username)
   const urlParts = result.url.split('/');
   const username = urlParts[urlParts.length - 1] || 'unknown';
+  
+  const rawTitle = result.title || '';
+  const rawDesc = result.description || '';
 
-  // Clean title
-  const rawTitle = result.title;
-  const rawDesc = result.description;
-
-  // Status Detection
+  // Refined Status Detection
   let status = ChannelStatus.ACTIVE;
   const statusCheck = (rawTitle + ' ' + rawDesc).toLowerCase();
-
+  
   if (statusCheck.includes('channel not found') || statusCheck.includes('page not found') || statusCheck.includes('deleted account')) {
     status = ChannelStatus.DELETED;
-  } else if (statusCheck.includes('unavailable due to') || statusCheck.includes('copyright infringement') || statusCheck.includes('pornographic content') || statusCheck.includes('blocked in your country')) {
+  } else if (statusCheck.includes('unavailable due to') || statusCheck.includes('copyright infringement')) {
     status = ChannelStatus.BANNED;
   }
 
-  const name = rawTitle.replace(/ – Telegram.*/, '').replace(/ \| Telegram.*/, '').trim();
+  // Refined Name Parsing
+  let name = rawTitle
+    .replace(/^Telegram: Contact @.+/, '') 
+    .replace(/^Telegram: .+/g, '')
+    .replace(/ – Telegram.*/, '')
+    .replace(/ \| Telegram.*/, '')
+    .trim();
+
+  if (!name || name.toLowerCase() === 'telegram') {
+      name = username;
+  }
+
+  const members = extractMembers(rawDesc);
 
   return {
     id: `web-${index}-${Date.now()}`,
     name: name,
     username: username,
     description: rawDesc || 'No description available.',
-    members: 0,
-    category: Category.ALL,
+    members: members, 
+    category: Category.ALL, 
     language: mapLanguage(result.language),
     lastActive: result.age ? result.age : 'Recently',
-    avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=229ED9&color=fff`,
+    avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=229ED9&color=fff`, 
     verified: false,
     status: status
   };
+};
+
+// Reused Member Extraction Logic
+const extractMembers = (text: string): number => {
+  if (!text) return 0;
+  const regex = /([\d\s.,]+[kKmM]?)\s*(?:subscribers|members|subs)/i;
+  const match = text.match(regex);
+  if (!match) return 0;
+
+  let numStr = match[1].trim().toUpperCase();
+  let multiplier = 1;
+
+  if (numStr.endsWith('K')) {
+    multiplier = 1000;
+    numStr = numStr.slice(0, -1);
+  } else if (numStr.endsWith('M')) {
+    multiplier = 1000000;
+    numStr = numStr.slice(0, -1);
+  }
+
+  numStr = numStr.replace(/\s/g, '');
+
+  if (multiplier > 1) {
+    numStr = numStr.replace(',', '.');
+  } else {
+    numStr = numStr.replace(/,/g, '');
+  }
+
+  const val = parseFloat(numStr);
+  return isNaN(val) ? 0 : Math.floor(val * multiplier);
 };
 
 const mapLanguage = (langCode?: string): Language => {

@@ -1,29 +1,35 @@
 import React from 'react';
-import { FilterState, Category, Language } from '../types';
+import { Category, Language } from '../types';
 import { Filter, X, ChevronRight, ShieldCheck } from 'lucide-react';
+import { useAppStore } from '../store/useAppStore';
 
 interface SidebarProps {
-  filters: FilterState;
-  setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   className?: string;
   onCloseMobile?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ filters, setFilters, className = '', onCloseMobile }) => {
+const Sidebar: React.FC<SidebarProps> = ({ className = '', onCloseMobile }) => {
+  const { filters, updateFilters, isSearching } = useAppStore();
+  const disabled = isSearching;
+
   const handleCategoryChange = (category: Category) => {
-    setFilters(prev => ({ ...prev, category }));
+    if (disabled) return;
+    updateFilters({ category });
   };
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFilters(prev => ({ ...prev, language: e.target.value as Language }));
+    if (disabled) return;
+    updateFilters({ language: e.target.value as Language });
   };
 
   const handleSubscriberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters(prev => ({ ...prev, minSubscribers: parseInt(e.target.value, 10) }));
+    if (disabled) return;
+    updateFilters({ minSubscribers: parseInt(e.target.value, 10) });
   };
 
   const toggleActiveOnly = () => {
-    setFilters(prev => ({ ...prev, onlyActive: !prev.onlyActive }));
+    if (disabled) return;
+    updateFilters({ onlyActive: !filters.onlyActive });
   };
 
   const formatSubscribers = (num: number) => {
@@ -33,7 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({ filters, setFilters, className = '', 
   };
 
   return (
-    <div className={`bg-[#0A0A0A] border border-gray-800 p-6 ${className}`}>
+    <div className={`bg-[#0A0A0A] border border-gray-800 p-6 ${className} ${disabled ? 'opacity-50 pointer-events-none select-none' : ''}`}>
       <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-800">
         <div className="flex items-center gap-2 text-white font-bold text-sm uppercase tracking-widest">
           <Filter className="w-4 h-4 text-telegram" />
@@ -108,6 +114,7 @@ const Sidebar: React.FC<SidebarProps> = ({ filters, setFilters, className = '', 
           <select
             value={filters.language}
             onChange={handleLanguageChange}
+            disabled={disabled}
             className="w-full bg-[#050505] border border-gray-700 text-gray-300 text-sm focus:border-yellow-400 focus:ring-0 focus:text-white block p-3 appearance-none rounded-none uppercase tracking-wide cursor-pointer transition-colors group-hover:border-gray-500"
           >
             {Object.values(Language).map((lang) => (
@@ -137,6 +144,7 @@ const Sidebar: React.FC<SidebarProps> = ({ filters, setFilters, className = '', 
           step="10000"
           value={filters.minSubscribers}
           onChange={handleSubscriberChange}
+          disabled={disabled}
           className="w-full h-1 bg-gray-800 rounded-none appearance-none cursor-pointer accent-yellow-400 hover:accent-yellow-300"
         />
       </div>

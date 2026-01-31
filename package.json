@@ -5,23 +5,28 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && tsc server.ts --outDir dist-server --esModuleInterop --module commonjs --target es2020 --skipLibCheck && echo '{\"type\": \"commonjs\"}' > dist-server/package.json",
+    "build": "vite build",
+    "build:server": "tsc server.ts --outDir dist-server --moduleNodeNext --moduleResolution NodeNext --noEmit false",
     "start": "node dist-server/server.js",
     "preview": "vite preview"
   },
   "dependencies": {
     "@google/genai": "^1.38.0",
-    "dotenv": "^17.2.3",
-    "express": "^5.2.1",
-    "express-rate-limit": "^8.2.1",
-    "helmet": "^8.1.0",
     "lucide-react": "^0.563.0",
-    "node-cache": "^5.1.2",
+    "react-dom": "^19.2.3",
     "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "vite": "^7.3.1",
+    "dotenv": "^17.2.3",
+    "express-rate-limit": "^8.2.1",
+    "@vitejs/plugin-react": "^5.1.2",
+    "path": "^0.12.7",
+    "helmet": "^8.1.0",
+    "express": "^5.2.1",
+    "url": "^0.11.4",
+    "redis": "^4.6.13",
+    "zustand": "^4.5.2"
   },
   "devDependencies": {
-    "@types/express": "^5.0.6",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",

@@ -2,11 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Sparkles, X, Globe, Terminal, Cpu, Download } from 'lucide-react';
 import { getSmartSuggestions } from '../services/geminiService';
 import GlitchText from './GlitchText';
-
-interface HeroProps {
-  onSearch: (query: string, engine?: string) => void;
-  initialQuery?: string;
-}
+import { useAppStore } from '../store/useAppStore';
 
 const ENGINE_OPTIONS = [
   { id: 'ai', name: 'AI Search', icon: Sparkles, cseId: undefined },
@@ -23,8 +19,9 @@ const DORK_OPERATORS = [
   { label: 'Site', syntax: 'site:t.me', desc: 'Restrict to domain' },
 ];
 
-const Hero: React.FC<HeroProps> = ({ onSearch, initialQuery = '' }) => {
-  const [query, setQuery] = useState(initialQuery);
+const Hero: React.FC = () => {
+  const { searchQuery, setSearchQuery, performSearch, setSuggestionBoxOpen } = useAppStore();
+  // Local state for UI controls
   const [selectedEngine, setSelectedEngine] = useState(ENGINE_OPTIONS[0]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
@@ -35,9 +32,9 @@ const Hero: React.FC<HeroProps> = ({ onSearch, initialQuery = '' }) => {
   // Debounce AI suggestions
   useEffect(() => {
     const timer = setTimeout(async () => {
-      if (selectedEngine.id === 'ai' && query.length > 2) {
+      if (selectedEngine.id === 'ai' && searchQuery.length > 2) {
         setLoadingSuggestions(true);
-        const tags = await getSmartSuggestions(query);
+        const tags = await getSmartSuggestions(searchQuery);
         setSuggestions(tags);
         setLoadingSuggestions(false);
       } else {
@@ -46,7 +43,7 @@ const Hero: React.FC<HeroProps> = ({ onSearch, initialQuery = '' }) => {
     }, 800);
 
     return () => clearTimeout(timer);
-  }, [query, selectedEngine]);
+  }, [searchQuery, selectedEngine]);
 
   // Reset active suggestion when suggestions change
   useEffect(() => {
@@ -55,22 +52,20 @@ const Hero: React.FC<HeroProps> = ({ onSearch, initialQuery = '' }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(query, selectedEngine.cseId);
+    performSearch(searchQuery, selectedEngine.cseId);
   };
 
   const handleSuggestionClick = (tag: string) => {
-    setQuery(tag);
-    onSearch(tag, selectedEngine.cseId);
+    performSearch(tag, selectedEngine.cseId);
     setActiveSuggestionIndex(-1);
   };
 
   const insertDork = (syntax: string) => {
-    setQuery(prev => prev ? `${prev} ${syntax} ` : `${syntax} `);
+    setSearchQuery(searchQuery ? `${searchQuery} ${syntax} ` : `${syntax} `);
   };
 
   const clearSearch = () => {
-    setQuery('');
-    onSearch('', selectedEngine.cseId);
+    performSearch('', selectedEngine.cseId);
     setSuggestions([]);
   };
 
@@ -79,11 +74,9 @@ const Hero: React.FC<HeroProps> = ({ onSearch, initialQuery = '' }) => {
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      // Move into list or next
       setActiveSuggestionIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : prev));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      // Move up or back to input
       setActiveSuggestionIndex(prev => (prev > -1 ? prev - 1 : -1));
     } else if (e.key === 'ArrowRight') {
       if (activeSuggestionIndex >= 0) {
@@ -115,7 +108,6 @@ const Hero: React.FC<HeroProps> = ({ onSearch, initialQuery = '' }) => {
           
           <div className="relative flex items-center justify-center gap-3">
             <div className="relative">
-               {/* Increased size to text-5xl to act as a proper header, aligned with GlitchText */}
                <h2 className="text-5xl font-black text-white uppercase tracking-tighter leading-none relative z-10">
                  Discover
                </h2>
@@ -133,9 +125,14 @@ const Hero: React.FC<HeroProps> = ({ onSearch, initialQuery = '' }) => {
             </div>
           </div>
 
-          <p className="mt-6 text-gray-500 max-w-2xl mx-auto text-sm font-mono tracking-wide uppercase">
-            Advanced telemetry for the Telegram network. Locate channels via AI-assisted queries or direct dorks.
-          </p>
+          <div className="mt-6 max-w-2xl mx-auto space-y-3">
+             <p className="text-gray-500 text-sm font-mono tracking-wide uppercase">
+               Advanced telemetry for the Telegram network. Locate channels via AI-assisted queries or direct search.
+             </p>
+             <p className="text-[10px] text-gray-600 font-mono leading-relaxed">
+               <span className="text-yellow-500/80 font-bold">:: SYSTEM NOTICE ::</span> Public uplink restricted (20 queries/15m). This project is self-funded and ad-free. If you value this intelligence, help keep the lights on by contributing via the <button onClick={() => setSuggestionBoxOpen(true)} className="underline hover:text-telegram decoration-gray-700 hover:decoration-telegram transition-all cursor-pointer font-bold">suggestion box</button>.
+             </p>
+          </div>
         </div>
         
         <form onSubmit={handleSubmit} className="relative max-w-3xl mx-auto">
@@ -149,11 +146,11 @@ const Hero: React.FC<HeroProps> = ({ onSearch, initialQuery = '' }) => {
                 type="text"
                 className="block w-full pl-14 pr-16 py-5 border border-gray-800 bg-[#0A0A0A] text-white placeholder-gray-700 focus:outline-none focus:border-telegram focus:ring-1 focus:ring-telegram transition-all duration-200 text-xl font-mono rounded-none tracking-tight uppercase"
                 placeholder="Input Query..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
               />
-              {query && (
+              {searchQuery && (
                 <button
                   type="button"
                   onClick={clearSearch}
@@ -183,7 +180,7 @@ const Hero: React.FC<HeroProps> = ({ onSearch, initialQuery = '' }) => {
                     type="button"
                     onClick={() => {
                       setSelectedEngine(engine);
-                      if (query) onSearch(query, engine.cseId);
+                      if (searchQuery) performSearch(searchQuery, engine.cseId);
                     }}
                     className={`flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-all duration-200 rounded-none border ${
                       selectedEngine.id === engine.id
@@ -306,7 +303,7 @@ const Hero: React.FC<HeroProps> = ({ onSearch, initialQuery = '' }) => {
         </form>
 
         {/* AI Suggestions */}
-        {selectedEngine.id === 'ai' && query.length > 2 && (
+        {selectedEngine.id === 'ai' && searchQuery.length > 2 && (
           <div className="mt-8 min-h-[30px] flex justify-center">
             {loadingSuggestions ? (
               <div className="flex items-center gap-2 text-telegram text-xs font-mono">
@@ -318,7 +315,7 @@ const Hero: React.FC<HeroProps> = ({ onSearch, initialQuery = '' }) => {
                 {suggestions.map((tag, idx) => (
                   <button
                     key={idx}
-                    type="button" // Ensure it doesn't submit form on click if not handled
+                    type="button" 
                     onClick={() => handleSuggestionClick(tag)}
                     className={`px-3 py-1.5 text-[10px] font-mono border transition-all uppercase cursor-pointer ${
                       idx === activeSuggestionIndex 
