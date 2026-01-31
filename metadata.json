@@ -1,0 +1,5 @@
+{
+  "name": "TeleScope - Telegram Discovery",
+  "description": "A modern, AI-powered search engine to discover public Telegram channels by keyword, category, and language.",
+  "requestFramePermissions": []
+}
