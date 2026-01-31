@@ -56,12 +56,30 @@ const transformToChannel = (result: BraveResult, index: number): Channel => {
 
   // Refined Status Detection
   let status = ChannelStatus.ACTIVE;
-  const statusCheck = (rawTitle + ' ' + rawDesc).toLowerCase();
+  const combinedText = (rawTitle + ' ' + rawDesc).toLowerCase();
   
-  if (statusCheck.includes('channel not found') || statusCheck.includes('page not found') || statusCheck.includes('deleted account')) {
-    status = ChannelStatus.DELETED;
-  } else if (statusCheck.includes('unavailable due to') || statusCheck.includes('copyright infringement')) {
+  const bannedPatterns = [
+    /unavailable due to/i,
+    /copyright infringement/i,
+    /violated.*local laws/i,
+    /pornography/i,
+    /legal.*grounds/i,
+    /channel.*blocked/i
+  ];
+
+  const deletedPatterns = [
+    /channel not found/i,
+    /page not found/i,
+    /doesn'?t exist/i,
+    /account.*deleted/i,
+    /no longer exists/i,
+    /^telegram: contact @.* \(deleted\)$/i
+  ];
+
+  if (bannedPatterns.some(p => p.test(combinedText))) {
     status = ChannelStatus.BANNED;
+  } else if (deletedPatterns.some(p => p.test(combinedText))) {
+    status = ChannelStatus.DELETED;
   }
 
   // Refined Name Parsing
@@ -70,6 +88,8 @@ const transformToChannel = (result: BraveResult, index: number): Channel => {
     .replace(/^Telegram: .+/g, '')
     .replace(/ – Telegram.*/, '')
     .replace(/ \| Telegram.*/, '')
+    .replace(/\s*–\s*Telegram$/, '')
+    .replace(/\s*\|\s*Telegram$/, '')
     .trim();
 
   if (!name || name.toLowerCase() === 'telegram') {

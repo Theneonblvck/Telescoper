@@ -74,7 +74,8 @@ const transformCSEItemToChannel = (item: any, index: number): Channel => {
     .replace(/^Telegram: .+/g, '')
     .replace(/ – Telegram$/, '')
     .replace(/ \| Telegram$/, '')
-    .replace(/\s*–\s*Telegram$/, '') 
+    .replace(/\s*–\s*Telegram$/, '')
+    .replace(/\s*\|\s*Telegram$/, '')
     .trim();
 
   // Fallback if name is generic
@@ -90,10 +91,28 @@ const transformCSEItemToChannel = (item: any, index: number): Channel => {
   let status = ChannelStatus.ACTIVE;
   const combinedText = (rawTitle + ' ' + rawDescription).toLowerCase();
   
-  if (combinedText.includes('channel not found') || combinedText.includes('page not found') || combinedText.includes("doesn't exist")) {
-    status = ChannelStatus.DELETED;
-  } else if (combinedText.includes('unavailable due to') || combinedText.includes('copyright') || combinedText.includes('pornography')) {
+  const bannedPatterns = [
+    /unavailable due to/i,
+    /copyright infringement/i,
+    /violated.*local laws/i,
+    /pornography/i,
+    /legal.*grounds/i,
+    /channel.*blocked/i
+  ];
+
+  const deletedPatterns = [
+    /channel not found/i,
+    /page not found/i,
+    /doesn'?t exist/i,
+    /account.*deleted/i,
+    /no longer exists/i,
+    /^telegram: contact @.* \(deleted\)$/i
+  ];
+  
+  if (bannedPatterns.some(p => p.test(combinedText))) {
     status = ChannelStatus.BANNED;
+  } else if (deletedPatterns.some(p => p.test(combinedText))) {
+    status = ChannelStatus.DELETED;
   }
 
   // Extract Members
@@ -164,10 +183,20 @@ const mapLanguage = (langStr?: string): Language => {
 
 const detectLanguage = (text: string): Language => {
   const t = text.toLowerCase();
-  if (/[\u0400-\u04FF]/.test(t)) return Language.RUSSIAN; 
-  if (/[\u0900-\u097F]/.test(t)) return Language.HINDI; 
-  if (/\b(y|el|la|en|es|por|para|un|una)\b/.test(t)) return Language.SPANISH;
-  if (/\b(der|die|das|und|ist|ein|eine|von|mit)\b/.test(t)) return Language.GERMAN;
-  if (/\b(the|and|is|in|to|of|for|with)\b/.test(t)) return Language.ENGLISH;
+
+  // 1. Script-based detection (Strong indicators)
+  if (/[\u0400-\u04FF]/.test(t)) return Language.RUSSIAN; // Cyrillic
+  if (/[\u0900-\u097F]/.test(t)) return Language.HINDI;   // Devanagari
+
+  // 2. Vocabulary-based detection
+  // German common words
+  if (/\b(der|die|das|und|ist|nicht|eine|mit|fÃ¼r|sich|den|auf|dass|kann)\b/i.test(t)) return Language.GERMAN;
+
+  // Spanish common words
+  if (/\b(el|la|los|las|en|un|una|por|para|con|sobre|este|esta|todo|nada|mas|mÃ¡s)\b/i.test(t)) return Language.SPANISH;
+
+  // English common words (Check last to avoid false positives from shared roots if possible, though basic list is safe)
+  if (/\b(the|and|is|are|for|with|you|this|that|from|have|not|your)\b/i.test(t)) return Language.ENGLISH;
+
   return Language.ALL;
 };
