@@ -385,8 +385,8 @@ const staticPath = path.join(__dirname, '../dist');
 console.log(`📋 Static path: ${staticPath}`);
 app.use(express.static(staticPath));
 
-// Catch-all route for SPA - Express 5 requires named parameter for wildcards
-app.get('/{*path}', (req, res) => {
+// Catch-all route for SPA - Express 5 / path-to-regexp v8 requires named wildcard parameter
+app.get('/{*splat}', (req, res) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 

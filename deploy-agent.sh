@@ -198,7 +198,7 @@ setup_service_account() {
     # Check if service account exists
     if gcloud iam service-accounts describe "$sa_email" --project="$PROJECT_ID" &>/dev/null; then
         log_info "Service account already exists: $sa_email"
-        if ! prompt_yes_no "Reuse existing service account?" "y"; then
+        if prompt_yes_no "Reuse existing service account?" "y"; then
             log_success "Using existing service account"
             export SERVICE_ACCOUNT_EMAIL="$sa_email"
             return
