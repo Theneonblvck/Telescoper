@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:server": "tsc server.ts --outDir dist-server --moduleNodeNext --moduleResolution NodeNext --noEmit false",
+    "build:server": "tsc server.ts --outDir dist-server --module NodeNext --moduleResolution NodeNext --target ES2022 --esModuleInterop --skipLibCheck --resolveJsonModule",
     "start": "node dist-server/server.js",
     "preview": "vite preview"
   },
@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
+    "@types/express": "^5.0.0",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"

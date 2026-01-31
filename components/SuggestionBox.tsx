@@ -135,9 +135,9 @@ const SuggestionBox: React.FC = () => {
                             <Check className="w-5 h-5" /> Transmission Established
                         </div>
                         <div className="text-gray-300 space-y-1">
-                            <p><span className="text-green-500 font-bold">>></span> Packet successfully routed to core.</p>
-                            <p><span className="text-green-500 font-bold">>></span> Payload size: {message.length} bytes.</p>
-                            <p><span className="text-green-500 font-bold">>></span> Status: <span className="text-white bg-green-900/50 px-1">ACKNOWLEDGED</span></p>
+                            <p><span className="text-green-500 font-bold">{">>"}</span> Packet successfully routed to core.</p>
+                            <p><span className="text-green-500 font-bold">{">>"}</span> Payload size: {message.length} bytes.</p>
+                            <p><span className="text-green-500 font-bold">{">>"}</span> Status: <span className="text-white bg-green-900/50 px-1">ACKNOWLEDGED</span></p>
                         </div>
                         <div className="mt-4 text-white font-bold tracking-tight">
                             Thank you for your contribution.

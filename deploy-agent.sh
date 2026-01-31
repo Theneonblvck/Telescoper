@@ -385,6 +385,12 @@ setup_artifact_registry() {
 build_and_push() {
     log_step "Building and Pushing Container Image"
     
+    # Ensure IMAGE_URI is set (in case registry step was skipped)
+    if [ -z "${IMAGE_URI:-}" ]; then
+        local repo_path="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY_NAME}"
+        export IMAGE_URI="${repo_path}/telescoper:latest"
+    fi
+    
     log_info "Building container (this may take several minutes)..."
     log_info "Image URI: $IMAGE_URI"
     
@@ -407,6 +413,22 @@ build_and_push() {
 deploy_to_cloud_run() {
     log_step "Deploying to Cloud Run"
     
+    # Ensure IMAGE_URI is set (in case registry step was skipped)
+    if [ -z "${IMAGE_URI:-}" ]; then
+        local repo_path="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY_NAME}"
+        export IMAGE_URI="${repo_path}/telescoper:latest"
+    fi
+    
+    # Ensure SERVICE_ACCOUNT_EMAIL is set (in case SA step was skipped)
+    if [ -z "${SERVICE_ACCOUNT_EMAIL:-}" ]; then
+        export SERVICE_ACCOUNT_EMAIL="${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
+    fi
+    
+    # Ensure SECRETS_TO_MOUNT is set (in case secrets step was skipped)
+    if [ -z "${SECRETS_TO_MOUNT:-}" ]; then
+        export SECRETS_TO_MOUNT="API_KEY=api-key:latest"
+    fi
+    
     log_info "Deploying service: $SERVICE_NAME"
     log_info "Region: $REGION"
     log_info "Service Account: $SERVICE_ACCOUNT_EMAIL"
@@ -427,7 +449,7 @@ deploy_to_cloud_run() {
         "--timeout" "300"
         "--concurrency" "80"
         "--set-secrets" "$SECRETS_TO_MOUNT"
-        "--set-env-vars" "NODE_ENV=production,PORT=8080"
+        "--set-env-vars" "NODE_ENV=production"
         "--project" "$PROJECT_ID"
     )
     
@@ -607,6 +629,18 @@ main() {
                 ;;
         esac
     done
+    
+    # Ensure PROJECT_ID is set (even if prerequisites are skipped)
+    if [ -z "${PROJECT_ID:-}" ]; then
+        PROJECT_ID=$(gcloud config get-value project 2>/dev/null || echo "")
+        if [ -z "$PROJECT_ID" ]; then
+            log_error "PROJECT_ID is not set and prerequisites were skipped"
+            log_info "Either run without --skip-prereqs or set PROJECT_ID manually"
+            exit 1
+        fi
+        export PROJECT_ID
+        log_info "Using project: $PROJECT_ID"
+    fi
     
     # Execute steps
     if ! should_skip_step "prereqs"; then

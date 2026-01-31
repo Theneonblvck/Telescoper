@@ -1,0 +1,27 @@
+/* Base styles - Tailwind is loaded via CDN in index.html */
+/* This file exists to prevent Vite build warnings */
+
+body {
+  font-family: 'JetBrains Mono', monospace;
+  background-color: #050505;
+  color: #E4E4E7;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  background: #000;
+}
+
+::-webkit-scrollbar-track {
+  background: #000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border: 1px solid #000;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #229ED9;
+}

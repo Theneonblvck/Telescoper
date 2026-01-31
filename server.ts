@@ -11,12 +11,28 @@ import fs from 'fs';
 
 dotenv.config();
 
+// Global error handlers
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+console.log('🚀 Starting Telescoper server...');
+console.log(`📋 Node version: ${process.version}`);
+console.log(`📋 NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
+console.log(`📋 API_KEY set: ${process.env.API_KEY ? 'Yes' : 'No'}`);
+
 // Fix for __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 8080;
+console.log(`📋 PORT: ${port}`);
 
 // --- Caching Setup ---
 // 1. Local In-Memory Cache (Free, Fast, Stateless)
@@ -52,7 +68,11 @@ let isRedisConnected = false;
 })();
 
 // --- API Client Setup ---
-const genAI = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const apiKey = process.env.API_KEY || '';
+if (!apiKey) {
+  console.error('⚠️ WARNING: API_KEY environment variable is not set. Gemini features will not work.');
+}
+const genAI = new GoogleGenAI({ apiKey });
 const searchApiKey = process.env.GOOGLE_SEARCH_API_KEY || process.env.API_KEY || '';
 const braveApiKey = process.env.BRAVE_SEARCH_API_KEY || '';
 
@@ -355,14 +375,23 @@ app.post('/api/feedback', feedbackLimiter, async (req, res) => {
   res.status(200).json({ success: true });
 });
 
+// --- Health Check ---
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // --- Serve Frontend ---
 const staticPath = path.join(__dirname, '../dist');
+console.log(`📋 Static path: ${staticPath}`);
 app.use(express.static(staticPath));
 
-app.get('*', (req, res) => {
+// Catch-all route for SPA - Express 5 requires named parameter for wildcards
+app.get('/{*path}', (req, res) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+// Explicitly bind to 0.0.0.0 for Cloud Run
+const host = '0.0.0.0';
+app.listen(Number(port), host, () => {
+  console.log(`✅ Server running on http://${host}:${port}`);
 });
