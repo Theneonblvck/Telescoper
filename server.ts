@@ -83,7 +83,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"], 
+      scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https://picsum.photos", "https://fastly.picsum.photos", "https://ui-avatars.com", "https://*.googleusercontent.com"],
@@ -383,10 +383,19 @@ app.get('/health', (req, res) => {
 // --- Serve Frontend ---
 const staticPath = path.join(__dirname, '../dist');
 console.log(`📋 Static path: ${staticPath}`);
-app.use(express.static(staticPath));
+
+// Don't cache HTML so CDN/proxy (e.g. in front of custom domain) always serves latest
+app.use(express.static(staticPath, {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('index.html') || path.basename(filePath) === 'index.html') {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    }
+  },
+}));
 
 // Catch-all route for SPA - Express 5 / path-to-regexp v8 requires named wildcard parameter
 app.get('/{*splat}', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 

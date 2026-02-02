@@ -1,10 +1,13 @@
-/* Base styles - Tailwind is loaded via CDN in index.html */
-/* This file exists to prevent Vite build warnings */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-body {
-  font-family: 'JetBrains Mono', monospace;
-  background-color: #050505;
-  color: #E4E4E7;
+@layer base {
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background-color: #050505;
+    color: #E4E4E7;
+  }
 }
 
 /* Custom scrollbar */
