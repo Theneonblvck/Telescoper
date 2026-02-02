@@ -2,11 +2,12 @@
 set -e
 
 # --- Configuration ---
-APP_NAME="telescope-app"
+# Changing name to ensure we don't conflict with your broken 'telescoper2' service
+APP_NAME="telescope-v1"
 REGION="us-central1"
 
 echo "=================================================="
-echo "   🔭 TELESCOPE DEPLOYMENT SCRIPT"
+echo "   🔭 TELESCOPE DEPLOYMENT: $APP_NAME"
 echo "=================================================="
 
 # 1. Validate Environment
@@ -23,26 +24,30 @@ if [ -z "$PROJECT_ID" ]; then
     echo "   Run: gcloud config set project YOUR_PROJECT_ID"
     exit 1
 fi
-echo "✅ Using Project: $PROJECT_ID"
+echo "✅ Project: $PROJECT_ID"
 
-# 3. Enable Required Services (Idempotent)
-echo "🔄 Ensuring Cloud APIs are enabled..."
-gcloud services enable cloudbuild.googleapis.com run.googleapis.com containerregistry.googleapis.com
+# 3. Check for Dockerfile
+if [ ! -f Dockerfile ]; then
+    echo "❌ Error: Dockerfile not found."
+    exit 1
+fi
 
-# 4. Build Container
-echo "🏗️  Building Container (this may take a few minutes)..."
-gcloud builds submit --tag gcr.io/$PROJECT_ID/$APP_NAME
+# 4. Enable Required Services
+echo "🔄 Enabling Cloud APIs (this may take a moment)..."
+gcloud services enable cloudbuild.googleapis.com run.googleapis.com containerregistry.googleapis.com > /dev/null 2>&1
 
-# 5. Deploy to Cloud Run
-echo "🚀 Deploying to Cloud Run..."
+# 5. Build & Deploy
+echo "🚀 Building and Deploying to Cloud Run..."
+echo "   (This takes about 2-3 minutes)"
+
 gcloud run deploy $APP_NAME \
-  --image gcr.io/$PROJECT_ID/$APP_NAME \
+  --source . \
   --platform managed \
   --region $REGION \
   --allow-unauthenticated \
   --env-vars-file .env \
   --port 8080 \
-  --memory 512Mi
+  --memory 1Gi
 
 echo "=================================================="
 echo "   ✨ DEPLOYMENT COMPLETE"

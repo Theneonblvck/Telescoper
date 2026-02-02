@@ -1,26 +1,28 @@
 import { create } from 'zustand';
-import { Channel, FilterState, Category, Language, ChannelStatus } from '../types';
+import { Channel, FilterState, Category, Language } from '../types';
 import { MOCK_CHANNELS } from '../constants';
-import { searchTelegramChannels } from '../services/googleSearchService';
+import { performNeuralSearch, performIndexSearch } from '../services/googleSearchService';
 
 interface AppState {
-  // State
   searchQuery: string;
   channels: Channel[];
   isSearching: boolean;
+  searchMode: 'ai' | 'index' | 'local';
   usingWebResults: boolean;
   currentCseName: string | null;
+  error: string | null;
+  systemStatus: 'checking' | 'online' | 'offline';
   filters: FilterState;
   sortBy: 'name' | 'members' | 'activity';
   theme: 'light' | 'dark';
   isMobileMenuOpen: boolean;
   isSuggestionBoxOpen: boolean;
 
-  // Actions
   setSearchQuery: (query: string) => void;
+  setError: (error: string | null) => void;
+  checkSystemStatus: () => Promise<void>;
   updateFilters: (update: Partial<FilterState>) => void;
   setSortBy: (sortBy: 'name' | 'members' | 'activity') => void;
-  toggleTheme: () => void;
   setMobileMenuOpen: (isOpen: boolean) => void;
   setSuggestionBoxOpen: (isOpen: boolean) => void;
   performSearch: (query: string, cseId?: string) => Promise<void>;
@@ -34,78 +36,83 @@ const DEFAULT_FILTERS: FilterState = {
   onlyActive: true,
 };
 
-export const useAppStore = create<AppState>((set, get) => ({
-  // Initial State
+export const useAppStore = create<AppState>((set) => ({
   searchQuery: '',
   channels: MOCK_CHANNELS,
   isSearching: false,
+  searchMode: 'local',
   usingWebResults: false,
   currentCseName: null,
+  error: null,
+  systemStatus: 'checking',
   filters: DEFAULT_FILTERS,
   sortBy: 'members',
   theme: 'dark',
   isMobileMenuOpen: false,
   isSuggestionBoxOpen: false,
 
-  // Actions
   setSearchQuery: (query) => set({ searchQuery: query }),
+  setError: (error) => set({ error }),
   
-  updateFilters: (update) => 
-    set((state) => ({ filters: { ...state.filters, ...update } })),
+  checkSystemStatus: async () => {
+    try {
+      const res = await fetch('/api/health');
+      set({ systemStatus: res.ok ? 'online' : 'offline' });
+    } catch {
+      set({ systemStatus: 'offline' });
+    }
+  },
 
+  updateFilters: (update) => set((state) => ({ filters: { ...state.filters, ...update } })),
   setSortBy: (sortBy) => set({ sortBy }),
-
-  toggleTheme: () => 
-    set((state) => ({ theme: state.theme === 'light' ? 'dark' : 'light' })),
-
   setMobileMenuOpen: (isOpen) => set({ isMobileMenuOpen: isOpen }),
-
   setSuggestionBoxOpen: (isOpen) => set({ isSuggestionBoxOpen: isOpen }),
 
   performSearch: async (query: string, cseId?: string) => {
-    set({ searchQuery: query });
+    set({ searchQuery: query, error: null });
 
-    // Reset to mock if empty
-    if (!query.trim()) {
+    if (!query.trim() || query.length < 3) {
       set({
         channels: MOCK_CHANNELS,
         usingWebResults: false,
-        currentCseName: null,
+        searchMode: 'local',
+        currentCseName: null
       });
       return;
     }
 
-    if (query.length > 2) {
-      set({ isSearching: true });
-      try {
-        // Always attempt to fetch from backend. The backend handles API keys.
-        const webResults = await searchTelegramChannels(query, cseId);
-        
-        // Use results if found, otherwise empty array (which triggers No Results UI)
-        set((state) => ({
-          channels: webResults,
-          usingWebResults: true,
-          currentCseName: cseId ? (cseId === '004805129374225513871' ? 'CSE Global' : 'CSE Extended') : 'AI Search',
-          // Reset strict filters so users can see results
-          filters: { ...state.filters, category: Category.ALL, minSubscribers: 0 }
-        }));
-      } catch (error) {
-        console.error("Search flow error:", error);
-        set({
-          channels: [],
-          usingWebResults: true,
-          currentCseName: null,
-        });
-      } finally {
-        set({ isSearching: false });
+    set({ isSearching: true });
+    
+    try {
+      let results: Channel[] = [];
+      let mode: 'ai' | 'index' = 'ai';
+
+      if (cseId) {
+        mode = 'index';
+        results = await performIndexSearch(query, cseId);
+        set({ currentCseName: cseId === '004805129374225513871' ? 'Global Index' : 'Extended Index' });
+      } else {
+        mode = 'ai';
+        results = await performNeuralSearch(query);
+        set({ currentCseName: 'Neural Net' });
       }
-    } else {
-      // Short query? Fallback to local
+
       set({
-        channels: MOCK_CHANNELS,
-        usingWebResults: false,
-        currentCseName: null,
+        channels: results,
+        usingWebResults: true,
+        searchMode: mode,
+        filters: { ...DEFAULT_FILTERS, minSubscribers: 0 } // Reset filters to show results
       });
+
+    } catch (error: any) {
+      console.error(error);
+      set({ 
+        channels: [],
+        usingWebResults: true, 
+        error: "Signal interrupted. No telemetry received." 
+      });
+    } finally {
+      set({ isSearching: false });
     }
   },
 
@@ -114,6 +121,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     filters: DEFAULT_FILTERS,
     channels: MOCK_CHANNELS,
     usingWebResults: false,
+    searchMode: 'local',
     currentCseName: null,
+    error: null,
   }),
 }));

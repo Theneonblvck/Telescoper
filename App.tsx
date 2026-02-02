@@ -5,6 +5,8 @@ import Hero from './components/Hero';
 import Sidebar from './components/Sidebar';
 import ChannelCard from './components/ChannelCard';
 import SuggestionBox from './components/SuggestionBox';
+import ThinkingTerminal from './components/ThinkingTerminal';
+import Toast from './components/Toast';
 import { ArrowRight, Loader2, Search as SearchIcon, ArrowUpDown, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useAppStore } from './store/useAppStore';
 
@@ -14,18 +16,24 @@ function App() {
     channels, 
     filters, 
     sortBy, 
-    isSearching, 
+    isSearching,
+    searchMode, 
     usingWebResults, 
     currentCseName,
     theme,
     isMobileMenuOpen,
     isSuggestionBoxOpen,
     setMobileMenuOpen,
-    setMobileMenuOpen: setMenuOpen, // Alias if needed or just use setMobileMenuOpen
     setSuggestionBoxOpen,
     setSortBy,
-    resetState
+    resetState,
+    checkSystemStatus // Added
   } = useAppStore();
+
+  // Initial Health Check
+  useEffect(() => {
+    checkSystemStatus();
+  }, [checkSystemStatus]);
 
   // Apply theme class
   useEffect(() => {
@@ -102,6 +110,7 @@ function App() {
       <Hero />
 
       {isSuggestionBoxOpen && <SuggestionBox />}
+      <Toast />
 
       <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-col lg:flex-row gap-8">
@@ -173,10 +182,14 @@ function App() {
             </div>
 
             {isSearching ? (
-              <div className="flex flex-col items-center justify-center py-32 border border-gray-800 border-dashed bg-[#0A0A0A]">
-                <Loader2 className="w-12 h-12 text-telegram animate-spin mb-4" />
-                <p className="text-gray-400 font-mono uppercase tracking-widest animate-pulse">Scanning...</p>
-              </div>
+              searchMode === 'ai' ? (
+                <ThinkingTerminal />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-32 border border-gray-800 border-dashed bg-[#0A0A0A]">
+                  <Loader2 className="w-12 h-12 text-telegram animate-spin mb-4" />
+                  <p className="text-gray-400 font-mono uppercase tracking-widest animate-pulse">Scanning Web Index...</p>
+                </div>
+              )
             ) : filteredChannels.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredChannels.map(channel => (
@@ -184,33 +197,41 @@ function App() {
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-24 px-4 text-center bg-[#0A0A0A] border border-gray-800 border-dashed animate-in fade-in duration-300">
-                <div className="bg-gray-900/50 p-4 rounded-full mb-4 border border-gray-800">
-                  {hasResultsButFiltered ? (
-                      <AlertTriangle className="w-8 h-8 text-yellow-500" />
-                  ) : (
-                      <SearchIcon className="w-8 h-8 text-gray-500" />
-                  )}
+              <div className="flex flex-col items-center justify-center py-32 px-4 text-center bg-[#0A0A0A] border border-gray-800 border-dashed relative overflow-hidden animate-in fade-in duration-500">
+                {/* Background Decor */}
+                <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none"></div>
+                
+                <div className="relative z-10 flex flex-col items-center">
+                    <div className={`p-6 rounded-full mb-6 border-2 ${hasResultsButFiltered ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
+                      {hasResultsButFiltered ? (
+                          <AlertTriangle className="w-12 h-12 text-yellow-500 animate-pulse" />
+                      ) : (
+                          <SearchIcon className="w-12 h-12 text-red-500/80" />
+                      )}
+                    </div>
+                    
+                    <h3 className={`text-3xl font-black uppercase tracking-tighter mb-4 ${hasResultsButFiltered ? 'text-yellow-500' : 'text-gray-200'}`}>
+                        {hasResultsButFiltered ? "Results Hidden" : "Signal Lost"}
+                    </h3>
+                    
+                    <p className="text-gray-500 max-w-lg font-mono text-sm leading-relaxed mb-10">
+                      {hasResultsButFiltered
+                        ? 'Intelligence was gathered but is masked by your current filters. Adjust parameters (Active Only, Subscribers) to reveal.'
+                        : usingWebResults 
+                            ? `The web index yielded no public channels for "${searchQuery}". The signal is weak or non-existent.` 
+                            : 'No channels match your current criteria. Initiate a new search sequence or reset parameters.'}
+                    </p>
+                    
+                    <button 
+                      onClick={resetState}
+                      className="group relative px-8 py-4 bg-telegram text-white font-bold uppercase tracking-widest text-xs hover:bg-yellow-400 hover:text-black transition-all border border-transparent shadow-[0_0_20px_rgba(34,158,217,0.3)] hover:shadow-[0_0_20px_rgba(250,204,21,0.5)]"
+                    >
+                      <span className="flex items-center gap-3">
+                        <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+                        Re-calibrate Sensors
+                      </span>
+                    </button>
                 </div>
-                <h3 className="text-xl font-bold text-white uppercase tracking-wider mb-2">
-                    {hasResultsButFiltered ? "Results Hidden" : "Signal Lost"}
-                </h3>
-                <p className="text-gray-500 max-w-md font-mono text-sm mb-8">
-                  {hasResultsButFiltered
-                    ? 'Channels were found but are hidden by your current filters (e.g. Active Only or Subscriber count).'
-                    : usingWebResults 
-                        ? `No public channels detected for "${searchQuery}". Try broader keywords.` 
-                        : 'No channels match your current criteria. Reset to establish a new baseline.'}
-                </p>
-                <button 
-                  onClick={resetState}
-                  className="group relative px-6 py-3 bg-telegram text-white font-bold uppercase tracking-widest text-xs hover:bg-yellow-400 hover:text-black transition-all border border-transparent"
-                >
-                  <span className="flex items-center gap-2">
-                    <RefreshCw className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500" />
-                    Reset Parameters
-                  </span>
-                </button>
               </div>
             )}
           </div>

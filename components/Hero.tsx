@@ -3,6 +3,7 @@ import { Search, Sparkles, X, Globe, Terminal, Cpu, Download } from 'lucide-reac
 import { getSmartSuggestions } from '../services/geminiService';
 import GlitchText from './GlitchText';
 import { useAppStore } from '../store/useAppStore';
+import { useDebounce } from '../hooks/useDebounce';
 
 const ENGINE_OPTIONS = [
   { id: 'ai', name: 'AI Search', icon: Sparkles, cseId: undefined },
@@ -29,21 +30,26 @@ const Hero: React.FC = () => {
   const [showExport, setShowExport] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
 
-  // Debounce AI suggestions
+  // Debounce the search query to prevent API spamming
+  const debouncedSearchQuery = useDebounce(searchQuery, 800);
+
+  // Fetch AI suggestions when the debounced query changes
   useEffect(() => {
-    const timer = setTimeout(async () => {
-      if (selectedEngine.id === 'ai' && searchQuery.length > 2) {
+    const fetchSuggestions = async () => {
+      // Only fetch if using AI engine and query is long enough
+      if (selectedEngine.id === 'ai' && debouncedSearchQuery.length > 2) {
         setLoadingSuggestions(true);
-        const tags = await getSmartSuggestions(searchQuery);
+        const tags = await getSmartSuggestions(debouncedSearchQuery);
         setSuggestions(tags);
         setLoadingSuggestions(false);
       } else {
+        // Clear suggestions if conditions aren't met
         setSuggestions([]);
       }
-    }, 800);
+    };
 
-    return () => clearTimeout(timer);
-  }, [searchQuery, selectedEngine]);
+    fetchSuggestions();
+  }, [debouncedSearchQuery, selectedEngine.id]);
 
   // Reset active suggestion when suggestions change
   useEffect(() => {

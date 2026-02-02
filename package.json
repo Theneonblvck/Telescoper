@@ -1,12 +1,17 @@
 {
-  "name": "telescope---telegram-discovery",
+  "name": "telescope-telegram-discovery",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
-    "dev": "vite",
+    "dev": "echo '⚠️  To run locally, verify you are running the backend too! Use two terminals:\n  1. npm run dev:frontend\n  2. npm run dev:backend' && npm run dev:frontend",
+    "dev:frontend": "vite",
+    "dev:backend": "npx tsx server.ts",
     "build": "vite build",
-    "build:server": "tsc server.ts --outDir dist-server --module NodeNext --moduleResolution NodeNext --target ES2022 --esModuleInterop --skipLibCheck --resolveJsonModule",
+    "build:server": "tsc server.ts --outDir dist-server --moduleNodeNext --moduleResolution NodeNext --noEmit false",
     "start": "node dist-server/server.js",
     "preview": "vite preview"
   },
@@ -29,12 +34,9 @@
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
-    "@types/express": "^5.0.0",
     "@vitejs/plugin-react": "^5.0.0",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.15",
     "typescript": "~5.8.2",
+    "tsx": "^4.7.1",
     "vite": "^6.2.0"
   }
 }
